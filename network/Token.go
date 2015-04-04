@@ -20,6 +20,7 @@ func listDocs()(string){
 
 func receiveCommand()(string, string){
 	var command string
+	var argument string
 	
 	//TODO listen for commands from client
 	command = "LIST"
