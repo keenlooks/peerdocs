@@ -5,6 +5,9 @@ import (
     "fmt"
     "io/ioutil"
     "net"
+    "strconv"
+    //"xml"
+    //"strings"
     //"encoding/gob"
     "encoding/json"
 )
@@ -35,7 +38,7 @@ func listDocs()(string){
     //check whether the given file or directory exists or not
     _, err := os.Stat(docFolderPath)
     if os.IsNotExist(err) { return "No Docs" }
-    files, _ := ioutil.ReadDir("./docs/")
+    files, _ := ioutil.ReadDir(docFolderPath)
     if len(files) == 0 { return "No Docs" }
 	for _, f := range files {
 		docList += f.Name() + "|"	
@@ -45,11 +48,41 @@ func listDocs()(string){
 
 func createDoc()(string){
     //create a file in the correct XML format with sections: <DocID>, <GroupKey>, <GroupList>, <Text>
+    
+    //get MAC address
+    interfaces, err := net.Interfaces()
+    macaddr := interfaces[1].HardwareAddr.String()
+
+    //check for doc directory, if does not exist, create it
+    _, err = os.Stat(docFolderPath)
+    if os.IsNotExist(err) { if (os.Mkdir(docFolderPath, os.ModeDir) == nil) { return "Could not create directory" }}
+    files, _ := ioutil.ReadDir(docFolderPath)
+    
+    counter := 0
+
+    for _, filename := range files {if macaddr+strconv.Itoa(counter) == filename.Name(){counter+=1}}
+
+    //create the file
+    f, err := os.Create("docs/"+macaddr+strconv.Itoa(counter))
+    if err != nil{
+        return "Could not create file "+macaddr+strconv.Itoa(counter)
+    }
+
+    f.WriteString("<DocID>"+macaddr+strconv.Itoa(counter)+"</DocID>\n<GroupKey>"+"TODO"/*generate secure key and make it base64*/+"</GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text></Text>")
+
+    f.Close()
+
+    return macaddr+strconv.Itoa(counter)
 }
 
-func joinGroup(DocID string)(bool){
-	//will connect to token ring of group described in file at path "string"
+func joinGroup(argument string)(bool){
+	//will connect to token ring of group described by base64 encoded "argument"
 	//TODO - Handled by Network layer
+    
+    //create doc with contents 
+
+    //TODO
+
 	return true
 }
 
@@ -141,7 +174,7 @@ func process(command string, argument string, changearray []string)(FrontEndResp
 
     	case "CREATE":
     		//used by UI to initiate a Doc, returns a DocID
-    
+            response = createDoc()
 
     }
 
@@ -181,7 +214,6 @@ func main() {
 
     for {
         conn, err := ln.Accept() // Try to accept a connection
-
         if err != nil {
             fmt.Println("error accepting connection")
         }
