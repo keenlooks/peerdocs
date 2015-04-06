@@ -7,18 +7,20 @@ import (
     "net"
     "strconv"
     //"xml"
-    //"strings"
-    //"encoding/gob"
+    "strings"
+    "encoding/gob"
     "encoding/json"
 )
 
 var docFolderPath = "./docs"
 var localChanges = []string{}
+var officialChanges = []string{}
 var listenPort = ":12345"
+var tokenListenPort = ":12346"
 
 type Token struct {
     DocID string
-    totalChanges []string
+    changes string
 }
 
 type FrontEndRequest struct {
@@ -55,7 +57,7 @@ func createDoc()(string){
 
     //check for doc directory, if does not exist, create it
     _, err = os.Stat(docFolderPath)
-    if os.IsNotExist(err) { if (os.Mkdir(docFolderPath, os.ModeDir) == nil) { return "Could not create directory" }}
+    if os.IsNotExist(err) { if (os.Mkdir(docFolderPath, 0xFFF) != nil) { return "Could not create directory" }}
     files, _ := ioutil.ReadDir(docFolderPath)
     
     counter := 0
@@ -77,24 +79,33 @@ func createDoc()(string){
 
 func joinGroup(argument string)(bool){
 	//will connect to token ring of group described by base64 encoded "argument"
-	//TODO - Handled by Network layer
     
     //create doc with contents 
+    f, err := os.Create("docs/"+strings.Split(strings.Split(argument, "<DocID>")[1], "</DocID>")[0])
+    if err != nil{
+        return false
+    }
 
-    //TODO
+    f.WriteString(argument)
+
+    f.Close()
 
 	return true
 }
 
+func leaveGroup(argument string)(bool){
+
+    //TODO tell all other nodes in group contained in "argument" to delete your IP address by adding something to the token
+
+    //then delete file
+    return os.Remove("doc/"+argument) == nil
+}
+
 //takes connection as argument and decodes using json the command and arguments from FrontEnd
 func receiveCommand(conn net.Conn)(string, string, []string){
-	
 	dec := json.NewDecoder(conn)
     p := &FrontEndRequest{}
-
     dec.Decode(p)
-	//TODO listen for commands from client
-	
 	return p.Command, p.Argument, p.Changearray
 }
 
@@ -117,6 +128,46 @@ func handleConn(conn net.Conn){
     sendResponse(conn, response)
 }
 
+func listenToken(){
+    ln, err := net.Listen("tcp", tokenListenPort)
+
+    if err != nil {
+        fmt.Println("error listening for connection")
+    }
+
+    for {
+        conn, err := ln.Accept() // Try to accept a connection
+        if err != nil {
+            fmt.Println("error accepting connection")
+        }
+
+        go handleToken(conn)
+    }
+}
+
+func handleToken(conn net.Conn){
+    dec := gob.NewDecoder(conn)
+    token := &Token{}
+    dec.Decode(token)
+    conn.Close()
+
+    //TODO - update own files with changes in token, update token
+
+    return // will be removed out once rest is implemented
+    
+    //TODO - find next available node by looking through group list and trying to connect to each one in order (or some other way)
+        //TODO - try first host after you
+    conn2, err := net.Dial("tcp", "<host>"+tokenListenPort)
+    for err != nil {
+        //TODO - if doesnt work, increment to next possible host and try in for loop
+        conn2, err = net.Dial("tcp", "<host>"+tokenListenPort)
+    }
+
+    encoder := gob.NewEncoder(conn2)
+    encoder.Encode(token)
+    conn2.Close()
+}
+
 func process(command string, argument string, changearray []string)(FrontEndResponse){   
 
     response := ""
@@ -127,10 +178,11 @@ func process(command string, argument string, changearray []string)(FrontEndResp
     		//requires DocID as argument
     		//used to push updates that user is providing to document. append changes to change array in token
     		if argument == "" || len(changearray) == 0 {
-    			//TODO send error message back to requester
     			response = "command requires DocID as argument and changearray to have changes"
     			break
     		}
+
+            //TODO append changes to global localChanges slice
 
     	case "FETCH":
     		//requires DocID as argument
@@ -140,6 +192,8 @@ func process(command string, argument string, changearray []string)(FrontEndResp
     			response = "command requires argument"
     			break
     		}
+
+            //TODO return official changes contained in officialChanges array
 
     		
     	case "LIST":
@@ -152,7 +206,6 @@ func process(command string, argument string, changearray []string)(FrontEndResp
     			//DocID is a string in form <creating host MAC>.<number identifier>
     			//groupList is array of IPs in string form to check for bootstrapping
     		if argument == ""{
-    			//TODO send error message back to requester
     			response = "command requires argument"
     			break
     		}
@@ -167,10 +220,14 @@ func process(command string, argument string, changearray []string)(FrontEndResp
     		//requires DocId as argument
     		//used by UI to delete a key (the doc file) and remove itself from a group sends an update to all nodes to remove it from the list.
     		if argument == ""{
-    			//TODO send error message back to requester
     			response = "command requires argument"
     			break
     		}
+            if leaveGroup(argument){
+                response = "success"
+            }else{
+                response = "fail"
+            }
 
     	case "CREATE":
     		//used by UI to initiate a Doc, returns a DocID
@@ -211,6 +268,9 @@ func main() {
     if err != nil {
         fmt.Println("error listening for connection")
     }
+    
+    //start listening for tokens
+    go listenToken()
 
     for {
         conn, err := ln.Accept() // Try to accept a connection
