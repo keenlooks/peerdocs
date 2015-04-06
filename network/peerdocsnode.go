@@ -10,28 +10,35 @@ import (
     "strings"
     "encoding/gob"
     "encoding/json"
+    //"sort"
 )
 
 var docFolderPath = "./docs"
-var localChanges = []string{}
-var officialChanges = []string{}
+var localChanges = map[string][]Change{}
+var officialChanges = map[string][]Change{}
 var listenPort = ":12345"
 var tokenListenPort = ":12346"
 
 type Token struct {
     DocID string
-    changes string
+    updates string     //used to update groupList with new member
+    changes []Change
+}
+
+type Change struct {
+    position int
+    charstoappend string
 }
 
 type FrontEndRequest struct {
     Command 		string	`json:"command"`
     Argument 		string	`json:"argument"`
-    Changearray []string	`json:"changearray"`
+    Changearray []Change	`json:"changearray"`
 }
 
 type FrontEndResponse struct {
 	Responsestring 	string	`json:"responsestring"`
-	Changearray []string	`json:"changearray"`
+	Changearray []Change	`json:"changearray"`
 }
 
 func listDocs()(string){
@@ -102,7 +109,7 @@ func leaveGroup(argument string)(bool){
 }
 
 //takes connection as argument and decodes using json the command and arguments from FrontEnd
-func receiveCommand(conn net.Conn)(string, string, []string){
+func receiveCommand(conn net.Conn)(string, string, []Change){
 	dec := json.NewDecoder(conn)
     p := &FrontEndRequest{}
     dec.Decode(p)
@@ -151,7 +158,19 @@ func handleToken(conn net.Conn){
     dec.Decode(token)
     conn.Close()
 
-    //TODO - update own files with changes in token, update token
+    //update own changes and files with changes in token, update token
+    token.changes = append(token.changes, localChanges[token.DocID]...)
+    
+    //clear local changes
+    localChanges[token.DocID] = nil
+
+    //make all changes official
+    officialChanges[token.DocID] = append(officialChanges[token.DocID], token.changes...)
+
+    //TODO - change GroupList based on updates string in token
+
+    //TODO - update local files with changes
+
 
     return // will be removed out once rest is implemented
     
@@ -168,10 +187,20 @@ func handleToken(conn net.Conn){
     conn2.Close()
 }
 
-func process(command string, argument string, changearray []string)(FrontEndResponse){   
+func updateChanges(DocID string, updates []Change)(bool){
+    //updates must be sorted with oldest entry as 0th elementcccc
+    localChanges[DocID] = append(localChanges[DocID] , updates...)
+    return true
+}
+
+func fetchOfficialChanges(DocID string)(official []Change){
+    return officialChanges[DocID]
+}
+
+func process(command string, argument string, changearray []Change)(FrontEndResponse){   
 
     response := ""
-    var changes []string
+    var changes = []Change{}
     
     switch command {
     	case "UPDATE":
@@ -182,7 +211,8 @@ func process(command string, argument string, changearray []string)(FrontEndResp
     			break
     		}
 
-            //TODO append changes to global localChanges slice
+            //append changes to global localChanges slice
+            updateChanges(argument, changearray)
 
     	case "FETCH":
     		//requires DocID as argument
@@ -193,7 +223,8 @@ func process(command string, argument string, changearray []string)(FrontEndResp
     			break
     		}
 
-            //TODO return official changes contained in officialChanges array
+            //return official changes contained in officialChanges array
+            changes = fetchOfficialChanges(argument)
 
     		
     	case "LIST":
