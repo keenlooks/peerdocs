@@ -19,7 +19,7 @@ import (
 var docFolderPath = "./docs"
 var localChanges = map[string][]Change{}
 var officialChanges = map[string][]Change{}
-var listenPort = ":80"
+var listenPort = ":8080"
 var tokenListenPort = ":12345"
 
 type Token struct {
@@ -55,7 +55,7 @@ func listDocsHttp(w http.ResponseWriter, req *http.Request) {
     response := listDocs()
     //convert response to correct structure
     responsestring := ""
-    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Origin", "lvh.me")
     w.Header().Set("Access-Control-Allow-Credentials", "true")
     w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with")
     w.Header().Set("Access-Control-Allow-Methods", "PUT,PATCH,GET,POST")
