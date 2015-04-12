@@ -11,23 +11,32 @@ import (
     "encoding/gob"
     "encoding/json"
     //"sort"
+    "net/http"
+    "log"
 )
 
 var docFolderPath = "./docs"
 var localChanges = map[string][]Change{}
 var officialChanges = map[string][]Change{}
-var listenPort = ":12345"
-var tokenListenPort = ":12346"
+var listenPort = ":80"
+var tokenListenPort = ":12345"
 
 type Token struct {
     DocID string
-    updates string     //used to update groupList with new member
-    changes []Change
+    Updates string     //used to update groupList with new member
+    Changes []Change
 }
 
 type Change struct {
-    position int
-    charstoappend string
+    Id int                  `json:"id"`
+    Position int            `json:"location"`
+    Charstoappend string    `json:"mod"`
+}
+
+type Docmeta struct {
+    Id int                  `json:"id"`
+    Title string            `json:"title"`
+    Lastmod string          `json:"lastmod"`
 }
 
 type FrontEndRequest struct {
@@ -41,21 +50,44 @@ type FrontEndResponse struct {
 	Changearray []Change	`json:"changearray"`
 }
 
-func listDocs()(string){
-    var docList string
-    
-    //check whether the given file or directory exists or not
-    _, err := os.Stat(docFolderPath)
-    if os.IsNotExist(err) { return "No Docs" }
-    files, _ := ioutil.ReadDir(docFolderPath)
-    if len(files) == 0 { return "No Docs" }
-	for _, f := range files {
-		docList += f.Name() + "|"	
-	}
-	return docList[:len(docList)-1]
+func listDocsHttp(w http.ResponseWriter, req *http.Request) {
+    response := listDocs()
+    //convert response to correct structure
+    encoder := json.NewEncoder(w)
+    p := &response
+    encoder.Encode(p)
+    //io.WriteString(w, response)
 }
 
-func createDoc()(string){
+func listDocs()([]Docmeta){    
+    //check whether the given file or directory exists or not
+    _, err := os.Stat(docFolderPath)
+    if os.IsNotExist(err) { return []Docmeta{} }
+    files, _ := ioutil.ReadDir(docFolderPath)
+    if len(files) == 0 { return []Docmeta{} }
+    counter := 1
+    docList := []Docmeta{}
+	for _, f := range files {
+        dm := &Docmeta{}
+        dm.Id = counter
+        counter += 1
+        dm.Title = f.Name()
+        dm.Lastmod = f.ModTime().String()
+		docList = append(docList, *dm)
+	}	
+    return docList
+}
+
+func createDocHttp(w http.ResponseWriter, req *http.Request){
+    response := createDoc()
+    //convert response to correct structure
+    fmt.Println(req)
+    encoder := json.NewEncoder(w)
+    p := &response
+    encoder.Encode(p)
+}
+
+func createDoc()(Docmeta){
     //create a file in the correct XML format with sections: <DocID>, <GroupKey>, <GroupList>, <Text>
     
     //get MAC address
@@ -64,7 +96,7 @@ func createDoc()(string){
 
     //check for doc directory, if does not exist, create it
     _, err = os.Stat(docFolderPath)
-    if os.IsNotExist(err) { if (os.Mkdir(docFolderPath, 0xFFF) != nil) { return "Could not create directory" }}
+    if os.IsNotExist(err) { if (os.Mkdir(docFolderPath, 0xFFF) != nil) { return Docmeta{} }}
     files, _ := ioutil.ReadDir(docFolderPath)
     
     counter := 0
@@ -74,14 +106,21 @@ func createDoc()(string){
     //create the file
     f, err := os.Create("docs/"+macaddr+strconv.Itoa(counter))
     if err != nil{
-        return "Could not create file "+macaddr+strconv.Itoa(counter)
+        fmt.Println("Could not create file "+macaddr+strconv.Itoa(counter))
+        return Docmeta{}
     }
 
     f.WriteString("<DocID>"+macaddr+strconv.Itoa(counter)+"</DocID>\n<GroupKey>"+"TODO"/*generate secure key and make it base64*/+"</GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text></Text>")
 
+    dm := &Docmeta{}
+    dm.Id = 1
+    fstat, _ := f.Stat()
+    dm.Title = fstat.Name()
+    
+    dm.Lastmod = fstat.ModTime().String()
     f.Close()
 
-    return macaddr+strconv.Itoa(counter)
+    return *dm
 }
 
 func joinGroup(argument string)(bool){
@@ -124,7 +163,10 @@ func sendResponse(conn net.Conn, response FrontEndResponse){
     conn.Close()
 }
 
-func handleConn(conn net.Conn){
+/*func handleConn(conn net.Conn){
+
+// hello world, the web server
+    
 	//receive command and argument - command can be UPDATE, FETCH, LIST, JOIN, LEAVE, or CREATE
     command, argument, changearray := receiveCommand(conn)
 
@@ -133,7 +175,7 @@ func handleConn(conn net.Conn){
 
     //send response back to client
     sendResponse(conn, response)
-}
+}*/
 
 func listenToken(){
     ln, err := net.Listen("tcp", tokenListenPort)
@@ -157,15 +199,14 @@ func handleToken(conn net.Conn){
     token := &Token{}
     dec.Decode(token)
     conn.Close()
-
     //update own changes and files with changes in token, update token
-    token.changes = append(token.changes, localChanges[token.DocID]...)
+    token.Changes = append(token.Changes, localChanges[token.DocID]...)
     
     //clear local changes
     localChanges[token.DocID] = nil
 
     //make all changes official
-    officialChanges[token.DocID] = append(officialChanges[token.DocID], token.changes...)
+    officialChanges[token.DocID] = append(officialChanges[token.DocID], token.Changes...)
 
     //TODO - change GroupList based on updates string in token
 
@@ -197,7 +238,9 @@ func fetchOfficialChanges(DocID string)(official []Change){
     return officialChanges[DocID]
 }
 
-func process(command string, argument string, changearray []Change)(FrontEndResponse){   
+
+
+/*func process(command string, argument string, changearray []Change)(FrontEndResponse){   
 
     response := ""
     var changes = []Change{}
@@ -248,7 +291,7 @@ func process(command string, argument string, changearray []Change)(FrontEndResp
     		}
 
     	case "LEAVE":
-    		//requires DocId as argument
+    		//requires DocID as argument
     		//used by UI to delete a key (the doc file) and remove itself from a group sends an update to all nodes to remove it from the list.
     		if argument == ""{
     			response = "command requires argument"
@@ -271,7 +314,7 @@ func process(command string, argument string, changearray []Change)(FrontEndResp
     	Responsestring: response,
     	Changearray: changes,
     }
-}
+}*/
 
 func main() {
     //testing json request
@@ -292,17 +335,27 @@ func main() {
     
     //requests sent to the server must be in form: 
     //  {"command":"<command>","argument":"<argument>","changearray":<position:string array of changes>}
-    fmt.Println("Server running...")
+    
 
-    ln, err := net.Listen("tcp", listenPort)
+    /*ln, err := net.Listen("tcp", listenPort)
 
     if err != nil {
         fmt.Println("error listening for connection")
-    }
+    }*/
     
     //start listening for tokens
     go listenToken()
+    fmt.Println("Server running...")
 
+    //start listening for clients
+    http.HandleFunc("/api/docmeta", listDocsHttp)
+    http.HandleFunc("/api/createdoc", createDocHttp)
+    err := http.ListenAndServe(listenPort, nil)
+    if err != nil {
+        log.Fatal("ListenAndServe: ", err)
+    }
+
+    /*
     for {
         conn, err := ln.Accept() // Try to accept a connection
         if err != nil {
@@ -311,6 +364,7 @@ func main() {
 
         go handleConn(conn)
     }
+    */
 }
 
 
