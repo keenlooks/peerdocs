@@ -19,7 +19,7 @@ import (
     "log"
 )
 
-var docFolderPath = "./docs"
+var docFolderPath = "./docs/"
 var localChanges = map[string][]Change{}
 var officialChanges = map[string][]Change{}
 var listenPort = ":8080"
@@ -29,6 +29,11 @@ type Token struct {
     DocID string
     Updates string     //used to update groupList with new member
     Changes []Change
+}
+
+type Docdelts struct{
+  Id int                    `json:"id"`
+  Doccgs []Change           `json:"doccgs"`
 }
 
 type Change struct {
@@ -99,7 +104,7 @@ func listDocs()([]Docmeta){
         nameint, _ := strconv.Atoi(f.Name())
         dm.Id = nameint
         counter += 1
-        fopened, err := os.Open("docs/"+f.Name())
+        fopened, err := os.Open(docFolderPath+f.Name())
         if(f.Name()[0]=='.'){continue}
         if(err != nil){
             fmt.Println("cannot open doc")
@@ -170,7 +175,7 @@ func createDoc(dc Doccreate)(Docfetch){
     for _, filename := range files {if strconv.Itoa(macaddr+counter) == filename.Name(){counter+=1}}
 
     //create the file
-    f, err := os.Create("docs/"+strconv.Itoa(macaddr+counter))
+    f, err := os.Create(docFolderPath+strconv.Itoa(macaddr+counter))
     if err != nil{
         fmt.Println("Could not create file "+strconv.Itoa(macaddr+counter))
         return Docfetch{}
@@ -194,7 +199,7 @@ func joinGroup(argument string)(bool){
 	//will connect to token ring of group described by base64 encoded "argument"
     
     //create doc with contents 
-    f, err := os.Create("docs/"+strings.Split(strings.Split(argument, "<DocID>")[1], "</DocID>")[0])
+    f, err := os.Create(docFolderPath+strings.Split(strings.Split(argument, "<DocID>")[1], "</DocID>")[0])
     if err != nil{
         return false
     }
@@ -211,7 +216,7 @@ func leaveGroup(argument string)(bool){
     //TODO tell all other nodes in group contained in "argument" to delete your IP address by adding something to the token
 
     //then delete file
-    return os.Remove("doc/"+argument) == nil
+    return os.Remove(docFolderPath+argument) == nil
 }
 
 //takes connection as argument and decodes using json the command and arguments from FrontEnd
@@ -261,14 +266,57 @@ func listenToken(){
     }
 }
 
+func updateFile(DocID string)(bool){
+
+    fopened, err := os.Open(docFolderPath+DocID)
+    if(err != nil){
+        fmt.Println("cannot open "+DocID+" for reading")
+        return false
+    }
+    buf := make([]byte, 4096)
+    count, _ := fopened.Read(buf)
+    if count == 0 {return false}
+    fopened.Close()
+    inputstring := string(buf)
+    inputstringtext := strings.Split(strings.Split(inputstring, "<Text>")[1], "</Text>")[0]
+    changes := officialChanges[DocID]
+
+    for _, change := range changes { 
+        inputstringtext = inputstringtext[:change.Position]+change.Charstoappend+inputstringtext[change.Position:]
+    }
+
+    fopened, err = os.Open(docFolderPath+DocID)
+    if(err != nil){
+        fmt.Println("cannot open "+DocID+" for writing")
+        return false
+    }
+    buf = make([]byte, 4096)
+    count, _ = fopened.Read(buf)
+    fopened.Close()
+    inputstring = string(buf)
+    inputstringbeforetext := strings.Split(inputstring, "<Text>")[0]
+
+    outputstring := inputstringbeforetext+ "<Text>"+inputstringtext+"</Text>"
+    ioutil.WriteFile(docFolderPath+DocID,[]byte(outputstring), 0666)
+    return true
+}
+
 func handleToken(conn net.Conn){
     dec := gob.NewDecoder(conn)
     token := &Token{}
     dec.Decode(token)
     conn.Close()
+
     //update own changes and files with changes in token, update token
+    for _, change := range token.Changes {
+        for _,localchange := range localChanges[token.DocID]{
+            if change.Position <= localchange.Position {
+                localchange.Position += len(change.Charstoappend)
+            }
+        }
+    }  
     token.Changes = append(token.Changes, localChanges[token.DocID]...)
-    
+
     //clear local changes
     localChanges[token.DocID] = nil
 
@@ -277,8 +325,12 @@ func handleToken(conn net.Conn){
 
     //TODO - change GroupList based on updates string in token
 
-    //TODO - update local files with changes
+    //update local files with changes
+    if updateFile(token.DocID){
 
+    //once file is updated clear official list
+    officialChanges[token.DocID]=nil
+    }
 
     return // will be removed out once rest is implemented
     
@@ -295,6 +347,41 @@ func handleToken(conn net.Conn){
     conn2.Close()
 }
 
+func updateChangesHttp(w http.ResponseWriter, req *http.Request){
+    req.ParseForm()
+    dd := &Docdelts{}
+    //fmt.Println(string(buf))
+    decoder := json.NewDecoder(req.Body)
+    decoder.Decode(dd)
+    fmt.Println(dd)
+    //dc.Title = req.URL.Query().Get("title")
+    //dc.Ctext = req.FormValue("ctext")
+    fmt.Println("updating "+strconv.Itoa(dd.Id))
+
+    if !updateChanges(strconv.Itoa(dd.Id), dd.Doccgs){ fmt.Println("update changes for "+strconv.Itoa(dd.Id)+" didnt work")}
+
+
+    //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
+    DocID := strconv.Itoa(dd.Id)
+    officialChanges[DocID] = append(officialChanges[DocID], localChanges[DocID]...)
+    localChanges[DocID] = nil
+    if updateFile(DocID){
+
+    //once file is updated clear official list
+    officialChanges[DocID]=nil
+    }    
+    //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
+
+
+
+    w.Header().Set("Access-Control-Allow-Credentials", "true")
+    w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with,Content-Type")
+    w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
+    w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
+    w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
+    return
+}
+
 func updateChanges(DocID string, updates []Change)(bool){
     //updates must be sorted with oldest entry as 0th elementcccc
     localChanges[DocID] = append(localChanges[DocID] , updates...)
@@ -307,7 +394,7 @@ func fetchOfficialChanges(DocID string)(official []Change){
 
 func fetchDocHttp(w http.ResponseWriter, req *http.Request){
     fmt.Println(req.URL.Path)
-    fmt.Println(strings.Split(req.URL.Path, "docs/")[1])
+    //fmt.Println(strings.Split(req.URL.Path, "docs/")[1])
     response := fetchDoc(strings.Split(req.URL.Path, "docs/")[1])
     //convert response to correct structure
     responsestring := ""
@@ -453,6 +540,7 @@ func main() {
     http.HandleFunc("/api/docmeta", listDocsHttp)
     http.HandleFunc("/api/docs", createDocHttp)
     http.HandleFunc("/api/docs/", fetchDocHttp)
+    http.HandleFunc("/api/docdelts", updateChangesHttp)
     err := http.ListenAndServe(listenPort, nil)
     if err != nil {
         log.Fatal("ListenAndServe: ", err)
