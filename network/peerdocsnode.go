@@ -11,6 +11,7 @@ import (
     "encoding/gob"
     "encoding/json"
     //"sort"
+    "math/rand"
     "io"
     "net/http"
     "log"
@@ -38,6 +39,17 @@ type Docmeta struct {
     Id int                  `json:"id"`
     Title string            `json:"title"`
     Lastmod string          `json:"lastmod"`
+}
+
+type Docfetch struct {
+    Id int                  `json:"id"`
+    Title string            `json:"title"`
+    Ctext string            `json:"ctext"`
+}
+
+type Doccreate struct {
+    Title string            `json:"title"`
+    Ctext string            `json:"ctext"`
 }
 
 type FrontEndRequest struct {
@@ -82,9 +94,14 @@ func listDocs()([]Docmeta){
     docList := []Docmeta{}
 	for _, f := range files {
         dm := &Docmeta{}
-        dm.Id = counter
+        nameint, _ := strconv.Atoi(f.Name())
+        dm.Id = nameint
         counter += 1
-        dm.Title = f.Name()
+        fopened, _ := os.Open("docs/"+f.Name())
+        buf := make([]byte, 128)
+        count, _ := fopened.Read(buf)
+        if count == 0 {return []Docmeta{}}
+        dm.Title = strings.Split(strings.Split(string(buf), "<Title>")[1], "</Title>")[0]
         dm.Lastmod = f.ModTime().String()
 		docList = append(docList, *dm)
 	}	
@@ -92,20 +109,32 @@ func listDocs()([]Docmeta){
 }
 
 func createDocHttp(w http.ResponseWriter, req *http.Request){
-    response := createDoc()
+    req.ParseForm()
+    dc := &Doccreate{}
+    //fmt.Println(string(buf))
+    decoder := json.NewDecoder(req.Body)
+    decoder.Decode(dc)
+    //dc.Title = req.URL.Query().Get("title")
+    //dc.Ctext = req.FormValue("ctext")
+    fmt.Println(dc.Title)
+
+    response := createDoc(*dc)
     //convert response to correct structure
-    fmt.Println(req)
     encoder := json.NewEncoder(w)
     p := &response
     encoder.Encode(p)
 }
 
-func createDoc()(Docmeta){
+func createDoc(dc Doccreate)(Docmeta){
     //create a file in the correct XML format with sections: <DocID>, <GroupKey>, <GroupList>, <Text>
     
     //get MAC address
     interfaces, err := net.Interfaces()
-    macaddr := interfaces[1].HardwareAddr.String()
+    macaddrstring := interfaces[1].HardwareAddr.String()
+    macaddrstring = strings.Replace(macaddrstring,":","",-1) 
+    macaddrint64,_ := strconv.ParseInt(macaddrstring,16,0)
+    rand.Seed(macaddrint64)
+    macaddr := rand.Int()
 
     //check for doc directory, if does not exist, create it
     _, err = os.Stat(docFolderPath)
@@ -114,21 +143,22 @@ func createDoc()(Docmeta){
     
     counter := 0
 
-    for _, filename := range files {if macaddr+strconv.Itoa(counter) == filename.Name(){counter+=1}}
+    for _, filename := range files {if strconv.Itoa(macaddr+counter) == filename.Name(){counter+=1}}
 
     //create the file
-    f, err := os.Create("docs/"+macaddr+strconv.Itoa(counter))
+    f, err := os.Create("docs/"+strconv.Itoa(macaddr+counter))
     if err != nil{
-        fmt.Println("Could not create file "+macaddr+strconv.Itoa(counter))
+        fmt.Println("Could not create file "+strconv.Itoa(macaddr+counter))
         return Docmeta{}
     }
 
-    f.WriteString("<DocID>"+macaddr+strconv.Itoa(counter)+"</DocID>\n<GroupKey>"+"TODO"/*generate secure key and make it base64*/+"</GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text></Text>")
+    f.WriteString("<DocID>"+strconv.Itoa(macaddr+counter)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey>"+"TODO"/*generate secure key and make it base64*/+"</GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
 
     dm := &Docmeta{}
-    dm.Id = 1
+
+    dm.Id = macaddr + counter
     fstat, _ := f.Stat()
-    dm.Title = fstat.Name()
+    dm.Title = dc.Title
     
     dm.Lastmod = fstat.ModTime().String()
     f.Close()
@@ -251,6 +281,39 @@ func fetchOfficialChanges(DocID string)(official []Change){
     return officialChanges[DocID]
 }
 
+func fetchDocHttp(w http.ResponseWriter, req *http.Request){
+    response := fetchDoc(strings.Split(req.URL.Path, "doc/")[1])
+    //convert response to correct structure
+    responsestring := ""
+    w.Header().Set("Access-Control-Allow-Credentials", "true")
+    w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with")
+    w.Header().Set("Access-Control-Allow-Methods", "PUT,PATCH,GET,POST")
+    w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
+    w.Header().Set("Access-Control-Expose-Headers", "Content-Length")
+    //encoder := json.NewEncoder(w)
+    p := &response
+    //encoder.Encode(p)
+    responseB, _ := json.Marshal(p)
+    responsestring = string(responseB)
+    //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
+    responsestring="{\"docs\":"+responsestring+"}"
+    io.WriteString(w,responsestring)
+}
+
+func fetchDoc(DocID string)(Docfetch){
+
+    fopened, _ := os.Open("docs/"+DocID)
+    buf := make([]byte, 2048)
+    count, _ := fopened.Read(buf)
+    if count == 0 {return Docfetch{}}
+
+    df := Docfetch{}
+    df.Id,_ = strconv.Atoi(DocID)
+    df.Title = strings.Split(strings.Split(string(buf), "<Title>")[1], "</Title>")[0]
+    df.Ctext = strings.Split(strings.Split(string(buf), "<Text>")[1], "</Text>")[0]
+    return df
+}
+
 
 
 /*func process(command string, argument string, changearray []Change)(FrontEndResponse){   
@@ -362,7 +425,8 @@ func main() {
 
     //start listening for clients
     http.HandleFunc("/api/docmeta", listDocsHttp)
-    http.HandleFunc("/api/createdoc", createDocHttp)
+    http.HandleFunc("/api/docs", createDocHttp)
+    http.HandleFunc("/api/doc/", fetchDocHttp)
     err := http.ListenAndServe(listenPort, nil)
     if err != nil {
         log.Fatal("ListenAndServe: ", err)
