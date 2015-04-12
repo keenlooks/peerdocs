@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>peerDocs</title>
+	<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	  <link rel="stylesheet" type="text/css" href="style/quill.css">
+</head>
+
+
+<body>
+
+<script type="text/x-handlebars" data-template-name="pd">
+	<div class="container-fluid">
+
+      <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+          <ul class="nav nav-sidebar">
+
+            <li class="active">
+			{{#link-to "PD.TEXT" activeClass="selected"}}TEXT{{/link-to}}
+            </li>
+            <li>{{#link-to "PD.LIST" activeClass="selected"}}LIST{{/link-to}}</li>
+            <li>{{#link-to "PD.INVITE" activeClass="selected"}}INVITE{{/link-to}}</li>
+            <li>{{#link-to "PD.SETTING" activeClass="selected"}}SETTING{{/link-to}}</li>
+          </ul>
+        </div>
+
+        {{outlet}}
+        </div>
+	
+        </div>
+        </script>
+
+       
+
+<script type="text/x-handlebars" data-template-name="pd/TEXT">
+
+       <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main" id="content-container">
+      <div id="editor-wrapper">
+        <div id="formatting-container">
+        <h4>title: {{title}}</h4>
+        <select title="Font" class="ql-font">
+            <option value="sans-serif" selected>Sans Serif</option>
+            <option value="Georgia, serif">Serif</option>
+            <option value="Monaco, 'Courier New', monospace">Monospace</option>
+          </select>
+          <select title="Size" class="ql-size">
+            <option value="10px">Small</option>
+            <option value="13px" selected>Normal</option>
+            <option value="18px">Large</option>
+            <option value="32px">Huge</option>
+          </select>
+          <select title="Text Color" class="ql-color">
+            <option value="rgb(255, 255, 255)">White</option>
+            <option value="rgb(0, 0, 0)" selected>Black</option>
+            <option value="rgb(255, 0, 0)">Red</option>
+            <option value="rgb(0, 0, 255)">Blue</option>
+            <option value="rgb(0, 255, 0)">Lime</option>
+            <option value="rgb(0, 128, 128)">Teal</option>
+            <option value="rgb(255, 0, 255)">Magenta</option>
+            <option value="rgb(255, 255, 0)">Yellow</option>
+          </select>
+          <select title="Background Color" class="ql-background">
+            <option value="rgb(255, 255, 255)" selected>White</option>
+            <option value="rgb(0, 0, 0)">Black</option>
+            <option value="rgb(255, 0, 0)">Red</option>
+            <option value="rgb(0, 0, 255)">Blue</option>
+            <option value="rgb(0, 255, 0)">Lime</option>
+            <option value="rgb(0, 128, 128)">Teal</option>
+            <option value="rgb(255, 0, 255)">Magenta</option>
+            <option value="rgb(255, 255, 0)">Yellow</option>
+          </select>
+          <select title="Text Alignment" class="ql-align">
+            <option value="left" selected>Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+            <option value="justify">Justify</option>
+          </select>
+          <button title="Bold" class="ql-format-button ql-bold">Bold</button>
+          <button title="Italic" class="ql-format-button ql-italic">Italic</button>
+          <button title="Underline" class="ql-format-button ql-underline">Under</button>
+          <button title="Strikethrough" class="ql-format-button ql-strike">Strike</button>
+          <button title="Link" class="ql-format-button ql-link">Link</button>
+          <button title="Image" class="ql-format-button ql-image">Image</button>
+          <button title="Bullet" class="ql-format-button ql-bullet">Bullet</button>
+          <button title="List" class="ql-format-button ql-list">List</button>
+       
+        </div>
+        <div id="editor-container"></div>
+       {{ctext}}
+      </div>
+    </div>
+
+</script>
+
+<script type="text/x-handlebars" data-template-name="pd/LIST">
+<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main list-group" style="margin: 0;">
+  <a href="#" class="list-group-item disabled">
+    MY DOCUMENTS
+  </a>
+  {{#each dmeta in model}}
+ 
+  {{#link-to "PD.TEXT" dmeta.id class="list-group-item"}}{{dmeta.title}}&nbsp;&nbsp;{{dmeta.lastmod}}{{/link-to}}
+{{/each}}
+</div>
+</script>
+
+<script type="text/x-handlebars" data-template-name="pd/NI">
+<h1>NOT IMPLEMENTED</h1>
+</script>
+
+<script type="text/x-handlebars" data-template-name="pd/index">
+<h1>WELCOME TO PEERDOCS</h1>
+</script>
+       
+	<script type="text/javascript" src="js/quill.js"></script>
+    <script type="text/javascript">
+/*
+    
+*/
+    </script>
+
+		<script src="node_modules/jquery/dist/jquery.js"></script>
+		 <script src="bootstrap/js/bootstrap.min.js"></script>
+
+		<script src="node_modules/handlebars/dist/handlebars.js"></script>
+		<script src="node_modules/components-ember/ember.js"></script>
+		<script src="node_modules/ember-data/ember-data.js"></script>
+		
+		<script src="js/app.js"></script>
+		<script src="js/controller.js"></script>
+		<script src="js/model.js"></script>
+		<script src="js/router.js"></script>
+		
+		
+</body>
+</html>
