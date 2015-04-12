@@ -11,6 +11,7 @@ import (
     "encoding/gob"
     "encoding/json"
     //"sort"
+    "io"
     "net/http"
     "log"
 )
@@ -53,9 +54,21 @@ type FrontEndResponse struct {
 func listDocsHttp(w http.ResponseWriter, req *http.Request) {
     response := listDocs()
     //convert response to correct structure
-    encoder := json.NewEncoder(w)
+    responsestring := ""
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Credentials", "true")
+    w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with")
+    w.Header().Set("Access-Control-Allow-Methods", "PUT,PATCH,GET,POST")
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Expose-Headers", "Content-Length")
+    //encoder := json.NewEncoder(w)
     p := &response
-    encoder.Encode(p)
+    //encoder.Encode(p)
+    responseB, _ := json.Marshal(p)
+    responsestring = string(responseB)
+    //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
+    io.WriteString(w,responsestring)
+    //encoder.Encode(p)
     //io.WriteString(w, response)
 }
 
