@@ -1,5 +1,6 @@
 package main
 
+
 import (
     "os"
     "fmt"
@@ -11,6 +12,7 @@ import (
     "encoding/gob"
     "encoding/json"
     //"sort"
+    "math"
     "math/rand"
     "io"
     "net/http"
@@ -68,10 +70,10 @@ func listDocsHttp(w http.ResponseWriter, req *http.Request) {
     //convert response to correct structure
     responsestring := ""
     w.Header().Set("Access-Control-Allow-Credentials", "true")
-    w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with")
-    w.Header().Set("Access-Control-Allow-Methods", "PUT,PATCH,GET,POST")
+    w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with,Content-Type")
+    w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
     w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
-    w.Header().Set("Access-Control-Expose-Headers", "Content-Length")
+    w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
     //encoder := json.NewEncoder(w)
     p := &response
     //encoder.Encode(p)
@@ -97,9 +99,14 @@ func listDocs()([]Docmeta){
         nameint, _ := strconv.Atoi(f.Name())
         dm.Id = nameint
         counter += 1
-        fopened, _ := os.Open("docs/"+f.Name())
+        fopened, err := os.Open("docs/"+f.Name())
+        if(f.Name()[0]=='.'){continue}
+        if(err != nil){
+            fmt.Println("cannot open doc")
+        }
         buf := make([]byte, 128)
         count, _ := fopened.Read(buf)
+        //fmt.Println(string(buf))
         if count == 0 {return []Docmeta{}}
         dm.Title = strings.Split(strings.Split(string(buf), "<Title>")[1], "</Title>")[0]
         dm.Lastmod = f.ModTime().String()
@@ -109,6 +116,14 @@ func listDocs()([]Docmeta){
 }
 
 func createDocHttp(w http.ResponseWriter, req *http.Request){
+    if(req.Method == "OPTIONS"){
+    w.Header().Set("Access-Control-Allow-Credentials", "true")
+    w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with,Content-Type")
+    w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
+    w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
+    w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
+        return
+    }
     req.ParseForm()
     dc := &Doccreate{}
     //fmt.Println(string(buf))
@@ -119,13 +134,22 @@ func createDocHttp(w http.ResponseWriter, req *http.Request){
     fmt.Println(dc.Title)
 
     response := createDoc(*dc)
+   responseB, _ := json.Marshal(response)
+    responsestring := string(responseB)
+    responsestring="{\"doc\":"+responsestring+"}";
+    w.Header().Set("Access-Control-Allow-Credentials", "true")
+    w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with,Content-Type")
+    w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
+    w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
+    w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
     //convert response to correct structure
-    encoder := json.NewEncoder(w)
-    p := &response
-    encoder.Encode(p)
+    //encoder := json.NewEncoder(w)
+   // p := &response
+    //encoder.Encode(p)
+    io.WriteString(w, responsestring)
 }
 
-func createDoc(dc Doccreate)(Docmeta){
+func createDoc(dc Doccreate)(Docfetch){
     //create a file in the correct XML format with sections: <DocID>, <GroupKey>, <GroupList>, <Text>
     
     //get MAC address
@@ -134,11 +158,11 @@ func createDoc(dc Doccreate)(Docmeta){
     macaddrstring = strings.Replace(macaddrstring,":","",-1) 
     macaddrint64,_ := strconv.ParseInt(macaddrstring,16,0)
     rand.Seed(macaddrint64)
-    macaddr := rand.Int()
+    macaddr := rand.Int()%int(math.Pow(2,float64(32)))
 
     //check for doc directory, if does not exist, create it
     _, err = os.Stat(docFolderPath)
-    if os.IsNotExist(err) { if (os.Mkdir(docFolderPath, 0xFFF) != nil) { return Docmeta{} }}
+    if os.IsNotExist(err) { if (os.Mkdir(docFolderPath, 0xFFF) != nil) { return Docfetch{} }}
     files, _ := ioutil.ReadDir(docFolderPath)
     
     counter := 0
@@ -149,18 +173,18 @@ func createDoc(dc Doccreate)(Docmeta){
     f, err := os.Create("docs/"+strconv.Itoa(macaddr+counter))
     if err != nil{
         fmt.Println("Could not create file "+strconv.Itoa(macaddr+counter))
-        return Docmeta{}
+        return Docfetch{}
     }
 
     f.WriteString("<DocID>"+strconv.Itoa(macaddr+counter)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey>"+"TODO"/*generate secure key and make it base64*/+"</GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
 
-    dm := &Docmeta{}
+    dm := &Docfetch{}
 
     dm.Id = macaddr + counter
-    fstat, _ := f.Stat()
+    //fstat, _ := f.Stat()
     dm.Title = dc.Title
     
-    dm.Lastmod = fstat.ModTime().String()
+    dm.Ctext = dc.Ctext
     f.Close()
 
     return *dm
@@ -282,11 +306,13 @@ func fetchOfficialChanges(DocID string)(official []Change){
 }
 
 func fetchDocHttp(w http.ResponseWriter, req *http.Request){
-    response := fetchDoc(strings.Split(req.URL.Path, "doc/")[1])
+    fmt.Println(req.URL.Path)
+    fmt.Println(strings.Split(req.URL.Path, "docs/")[1])
+    response := fetchDoc(strings.Split(req.URL.Path, "docs/")[1])
     //convert response to correct structure
     responsestring := ""
     w.Header().Set("Access-Control-Allow-Credentials", "true")
-    w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with")
+    w.Header().Set("Access-Control-Allow-Headers","Content-Type,Origin,x-requested-with")
     w.Header().Set("Access-Control-Allow-Methods", "PUT,PATCH,GET,POST")
     w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length")
@@ -426,7 +452,7 @@ func main() {
     //start listening for clients
     http.HandleFunc("/api/docmeta", listDocsHttp)
     http.HandleFunc("/api/docs", createDocHttp)
-    http.HandleFunc("/api/doc/", fetchDocHttp)
+    http.HandleFunc("/api/docs/", fetchDocHttp)
     err := http.ListenAndServe(listenPort, nil)
     if err != nil {
         log.Fatal("ListenAndServe: ", err)
