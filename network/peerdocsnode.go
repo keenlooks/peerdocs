@@ -469,5 +469,37 @@ func main() {
     }
     */
 }
+/*
+http://localhost:8080/api/docdelts
+
+{
+ 'docdelts':
+{
+  id:43
+  doccgs:[
+  {
+    id: 66
+    location: 43
+    mod:'insertted text'
+  },
+   {
+    id: 67
+    location: 43
+    mod:'insertted text'
+  },
+  {
+    id: 68
+    location: 43
+    mod:'insertted text'
+  },
+
+  ]
+}
+
+}
+*/
+
+// GET http://localhost:8080/api/docs/ID
+
 
 
