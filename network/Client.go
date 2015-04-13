@@ -8,12 +8,18 @@ import (
 )
 
 type Token struct {
-    DocID string
+    DocID     string
+    Key       string
     TokenData string
 }
 
 type NetworkPacket struct {
-    Payload Token
+    Payload  Token
+    Ptype    string
+    Src      string
+    Dst      string
+    SrcAddr  string
+    DstAddr  string
 }
 
 func main() {
@@ -23,13 +29,19 @@ func main() {
         log.Fatal("Connection error", err)
     }
     encoder := gob.NewEncoder(conn)
-    p := &NetworkPacket {
-         Payload: Token {
-                   DocID: "Document1",
-                   TokenData: "HelloWorld!",
-         },
-    }
 
+    p := new(NetworkPacket)
+    p.Ptype = "JOIN";
+    p.Src = "client5";
+    p.Dst = "server1"
+    p.DstAddr = "localhost:8080"
+
+    p.Payload.DocID = "Document1";
+    p.Payload.TokenData = "HelloWorld!";
+    p.Payload.Key = "TrustMe";
+    fmt.Printf("Src: %s, Type: %s, DocID: %s : TokenData: %s \n", 
+        p.Src, p.Ptype, p.Payload.DocID, p.Payload.TokenData);
+    fmt.Printf("Received : %+v", p);
     encoder.Encode(p)
     conn.Close()
     fmt.Println("done");
