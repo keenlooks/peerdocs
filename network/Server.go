@@ -51,18 +51,18 @@ func handleConnection(conn net.Conn) {
     fmt.Printf("Received : %+v\n", p);
 
     if(p.Ptype == "JOIN") {
-        mutex.Unlock()
         updateTokenRing(p, myname, true);
+        mutex.Unlock()
         return;
     }
     if(p.Ptype == "CREATE") {
-        mutex.Unlock()
         createDoc(p.Payload.DocID) 
+        mutex.Unlock()
         return;
     }
     if(p.Ptype == "UPDATE-RING") {
-        mutex.Unlock()
         updateTokenRing(p, p.Src, false)
+        mutex.Unlock()
         return;
     }
 
