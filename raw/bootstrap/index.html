@@ -4,108 +4,38 @@
 	<title>peerDocs</title>
 	<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
 	  <link rel="stylesheet" type="text/css" href="style/quill.css">
-    <link rel="stylesheet" type="text/css" href="style/style.css">
-    <link href="bootstrap/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-    <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
-
 </head>
 
 
 <body>
 
 <script type="text/x-handlebars" data-template-name="pd">
+	<div class="container-fluid">
 
- <section id="services" class="services bg-primary">
-        <div class="container">
-            <div class="row text-center">
-                <div class="col-lg-10 col-lg-offset-1">
-                    <div class="row">
-                        <div class="col-md-3 col-sm-6">
-                            <div class="service-item">
-                                <span class="fa-stack fa-3x">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-cloud fa-stack-1x text-primary"></i>
-                            </span>
-                                <h4>
-                                     <a href='#' class="navtext" {{action "createDoc"}}>NEW DOC</a>
-                                </h4>
-                                
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="service-item">
-                                <span class="fa-stack fa-3x">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-compass fa-stack-1x text-primary"></i>
-                            </span>
-                                <h4>
-                                    {{#link-to "PD.LIST" class="navtext"}}LIST{{/link-to}}
-                                </h4>
-                                
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="service-item">
-                                <span class="fa-stack fa-3x">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-flask fa-stack-1x text-primary"></i>
-                            </span>
-                                <h4>
-                                    {{#link-to "PD.INVITE" class="navtext"}}INVITE{{/link-to}}
-                                </h4>
-                               
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="service-item">
-                                <span class="fa-stack fa-3x">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-shield fa-stack-1x text-primary"></i>
-                            </span>
-                                <h4>
-                                    {{#link-to "PD.SETTING" class="navtext"}}SETTING{{/link-to}}
-                                </h4>
-                               
-                            </div>
-                        </div>
-                    </div>
-                    <!-- /.row (nested) -->
-                </div>
-                <!-- /.col-lg-10 -->
-            </div>
-            <!-- /.row -->
+      <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+          <ul class="nav nav-sidebar">
+
+            <li class="active">
+			{{#link-to "PD.TEXT" activeClass="selected"}}TEXT{{/link-to}}
+            </li>
+            <li>{{#link-to "PD.LIST" activeClass="selected"}}LIST{{/link-to}}</li>
+            <li>{{#link-to "PD.INVITE" activeClass="selected"}}INVITE{{/link-to}}</li>
+            <li>{{#link-to "PD.SETTING" activeClass="selected"}}SETTING{{/link-to}}</li>
+          </ul>
         </div>
-        <!-- /.container -->
-    </section>
 
-
-        <div class="site-wrapper">
         {{outlet}}
         </div>
 	
-
-</script>
-
-
-
-<script type="text/x-handlebars" data-template-name="pd/index">
-<div id="welcome">
-        <div class="text-vertical-center">
-            <h1>Start PeerDoc</h1>
-            <h3>Team20</h3>
-            <br>
-            <a id="opennav" href="#about" class="btn btn-dark btn-lg">Find Out More</a>
         </div>
-</div>
-
-</script>
-
+        </script>
 
        
 
 <script type="text/x-handlebars" data-template-name="pd/TEXT">
 
-       
+       <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main" id="content-container">
       <div id="editor-wrapper">
         <div id="formatting-container">
         <h4>title: {{title}}</h4>
@@ -159,12 +89,12 @@
         <div id="editor-container"></div>
        {{ctext}}
       </div>
-   
+    </div>
 
 </script>
 
 <script type="text/x-handlebars" data-template-name="pd/LIST">
-
+<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main list-group" style="margin: 0;">
   <a href="#" class="list-group-item disabled">
     MY DOCUMENTS
   </a>
@@ -172,14 +102,16 @@
  
   {{#link-to "PD.TEXT" dmeta.id class="list-group-item"}}{{dmeta.title}}&nbsp;&nbsp;{{dmeta.lastmod}}{{/link-to}}
 {{/each}}
-
+</div>
 </script>
 
 <script type="text/x-handlebars" data-template-name="pd/NI">
 <h1>NOT IMPLEMENTED</h1>
 </script>
 
-
+<script type="text/x-handlebars" data-template-name="pd/index">
+<h1>WELCOME TO PEERDOCS</h1>
+</script>
        
 	<script type="text/javascript" src="js/quill.js"></script>
     <script type="text/javascript">
@@ -199,17 +131,7 @@
 		<script src="js/controller.js"></script>
 		<script src="js/model.js"></script>
 		<script src="js/router.js"></script>
-		<script src="https://jpillora.com/xdomain/dist/xdomain.min.js"></script>
-		<script type="text/javascript">
-
-    $( document ).ready(function(){
-
-    $("#opennav").click(function(){
-      $("#services").slideDown();
-      return false;
-    });
-  });
-     
-    </script>
+		
+		
 </body>
 </html>

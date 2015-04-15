@@ -62,11 +62,12 @@ setupController: function(controller,doc){
 
        refresher=setInterval(function(){
         //console.log("hi");
-        docdelt.save().then(function(docdelt){
-          docdelt.reload();
+        docdelt.get('store').commit().then(function(docdelt){
+          docdelt.clear();
+          doc.reload();
         });
 
-        },3000);
+        },5000);
 
 
        editor.insertText(0, doc.get('ctext'), 'bold', true);
