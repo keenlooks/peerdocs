@@ -9,7 +9,7 @@ import (
     "strconv"
     //"xml"
     "strings"
-    "encoding/gob"
+  //  "encoding/gob"
     "encoding/json"
     //"sort"
     "math"
@@ -249,7 +249,7 @@ func sendResponse(conn net.Conn, response FrontEndResponse){
     sendResponse(conn, response)
 }*/
 
-func listenToken(){
+/*func listenToken(){
     ln, err := net.Listen("tcp", tokenListenPort)
 
     if err != nil {
@@ -264,7 +264,7 @@ func listenToken(){
 
         go handleToken(conn)
     }
-}
+}*/
 
 func updateFile(DocID string)(bool){
 
@@ -301,11 +301,11 @@ func updateFile(DocID string)(bool){
     return true
 }
 
-func handleToken(conn net.Conn){
-    dec := gob.NewDecoder(conn)
-    token := &Token{}
-    dec.Decode(token)
-    conn.Close()
+func handleToken(token Token)(Token){
+    //dec := gob.NewDecoder(conn)
+    //token := &Token{}
+    //dec.Decode(token)
+    //conn.Close()
 
     //update own changes and files with changes in token, update token
     for _, change := range token.Changes {
@@ -330,9 +330,12 @@ func handleToken(conn net.Conn){
 
     //once file is updated clear official list
     officialChanges[token.DocID]=nil
+    return token
     }
+    fmt.Println("could not update "+token.DocID)
+    return token
 
-    return // will be removed out once rest is implemented
+    /*return // will be removed out once rest is implemented
     
     //TODO - find next available node by looking through group list and trying to connect to each one in order (or some other way)
         //TODO - try first host after you
@@ -344,7 +347,7 @@ func handleToken(conn net.Conn){
 
     encoder := gob.NewEncoder(conn2)
     encoder.Encode(token)
-    conn2.Close()
+    conn2.Close()*/
 }
 
 
@@ -560,7 +563,7 @@ func main() {
     }*/
     
     //start listening for tokens
-    go listenToken()
+    //go listenToken()
     fmt.Println("Server running...")
 
     //start listening for clients
