@@ -16,17 +16,20 @@ type Token struct {
 }
 
 type NetworkPacket struct {
-    Payload  Token
-    Ptype    string
-    Src      string
-    Dst      string
-    SrcAddr  string
-    DstAddr  string
+    Payload   Token
+    RingEntry RingInfo
+    NodeEntry Node
+    Ptype     string
+    Src       string
+    Dst       string
+    SrcAddr   string
+    DstAddr   string
+    AckNeeded bool
 }
 
 type RingInfo struct {
-    prevNode string
-    nextNode string
+    PrevNode string
+    NextNode string
 }
 
 type Node struct {
@@ -42,40 +45,170 @@ var myname string
 var myaddr string
 var mutex *sync.Mutex;
 
-func handleConnection(conn net.Conn) {
-    mutex.Lock()
-    dec := gob.NewDecoder(conn)
-    p := &NetworkPacket{}
-    
-    dec.Decode(p);
-    fmt.Printf("Received : %+v\n", p);
+func readConsoleInput() {
+    var input int
+    var docID string
+    var joinNodeAddr string
+    var joinNodeName string
+    var key string
 
-    if(p.Ptype == "JOIN") {
-        updateTokenRing(p, myname, true);
-        mutex.Unlock()
-        return;
-    }
-    if(p.Ptype == "CREATE") {
-        createDoc(p.Payload.DocID) 
-        mutex.Unlock()
-        return;
-    }
-    if(p.Ptype == "UPDATE-RING") {
-        updateTokenRing(p, p.Src, false)
-        mutex.Unlock()
-        return;
+    for {
+        input = 0
+        fmt.Printf("Enter Choice: (1) for create (2) for join (3) to print rings\n");
+        fmt.Scanf("%d", &input);
+
+        switch input {
+        case 1: fmt.Printf("Enter DOC ID: ");
+                docID = ""
+                fmt.Scanln(&docID)
+                fmt.Printf("Entered Details: DOC ID=%s\n", docID);
+                createDoc(docID)
+        case 2: fmt.Printf("Enter DOC ID: ");
+                docID = ""
+                fmt.Scanln(&docID)
+
+                fmt.Printf("Enter node addr to contact: ");
+                joinNodeAddr = ""
+                fmt.Scanln(&joinNodeAddr)
+
+                fmt.Printf("Enter node name to contact: ");
+                joinNodeName = ""
+                fmt.Scanln(&joinNodeName)
+
+                fmt.Printf("Enter Doc key: ");
+                key = ""
+                fmt.Scanln(&key)
+
+                fmt.Printf("Entered Details: DOC ID=%s, Node Addr=%s, Node Name=%s, Key=%s\n", 
+                    docID, joinNodeAddr, joinNodeName, key);
+                joinGroup(joinNodeName, joinNodeAddr, docID, key)
+        case 3: for key, value := range tokenring { 
+                    fmt.Printf("=====Printing ring for doc %s=====\n", key);
+                    printTokenRing(value)
+                }
+        }
     }
 
-    /* TODO: Call to the middleware here to update the token */
-
-    // Now forward the updated token to the next node in the ring
-    forwardToken(&(p.Payload))
-    conn.Close();
-    mutex.Unlock()
     return
 }
 
-func forwardToken(payload *Token) {
+func handleConnection(conn net.Conn) {
+    var err error
+
+    var p *NetworkPacket
+
+    for { 
+        dec := gob.NewDecoder(conn)
+        enc := gob.NewEncoder(conn)
+
+        p = &NetworkPacket{}
+        err = dec.Decode(p);
+        if err != nil {
+            fmt.Printf("Error in handle connection, exiting. Error = %s\n", err);
+            conn.Close()
+            return
+        }
+
+        fmt.Printf("Received : %+v\n", p);
+        mutex.Lock()
+
+        if(p.Ptype == "JOIN") {
+            updateTokenRing(conn, enc, dec, p, myname, true);
+            sendRing(conn, enc, p)
+            mutex.Unlock()
+            conn.Close()
+        }
+
+        if(p.Ptype == "UPDATE-RING") {
+            updateTokenRing(conn, enc, dec, p, p.Src, false)
+            mutex.Unlock()
+        }
+
+        if(p.Ptype == "FETCH-RING") {
+            sendRing(conn, enc, p)
+            mutex.Unlock()
+        }
+
+        /* TODO: Call to the middleware here to update the token */
+
+        if(p.Ptype == "FORWARD-TOKEN") {
+            forwardToken(conn, &(p.Payload))
+            mutex.Unlock()
+        }
+    }
+
+    return
+}
+
+func sendRing(conn net.Conn, enc *gob.Encoder, p *NetworkPacket) {
+    fmt.Printf("Trying to send ring details for %s\n", p.Payload.DocID)
+    ring, ok := tokenring[p.Payload.DocID]
+
+    if ok == false {
+        fmt.Printf("Failed to fetch ring details for doc %s\n", p.Payload.DocID)
+        return
+    }
+
+    np := new(NetworkPacket)
+    var n *Node
+
+    for key, value := range ring {
+        np.RingEntry.PrevNode = value.PrevNode
+        np.RingEntry.NextNode = value.NextNode
+        np.Src = key
+        enc.Encode(np)
+
+        n = nodes[key]
+        np.NodeEntry.NodeName = n.NodeName
+        np.NodeEntry.NodeAddr = n.NodeAddr
+        np.NodeEntry.conn = nil
+        enc.Encode(np)
+    }
+   
+    np.Ptype = "FETCH_RING_DONE"
+    enc.Encode(np)
+
+    return 
+}
+
+func fetchRing(conn net.Conn, dec *gob.Decoder, 
+               docID string, key string) {
+    fmt.Printf("Trying to fetch ring details for doc ID %s\n", docID)
+    var re *RingInfo
+
+    ring, ok := tokenring[docID]
+
+    resp := &NetworkPacket{}
+    var node *Node
+
+    fmt.Printf("Waiting for ring details..\n")
+    for {
+        err := dec.Decode(resp)
+        if err != nil {
+            break;
+        }
+
+        if resp.Ptype == "FETCH_RING_DONE" {
+            break
+        }
+
+        re = new(RingInfo)
+        re.NextNode = resp.RingEntry.NextNode
+        re.PrevNode = resp.RingEntry.PrevNode
+        ring[resp.Src] = re
+
+        node, ok = nodes[resp.Src]
+        dec.Decode(resp)
+        if(ok == false) {
+            node = new(Node)
+            node.NodeName = resp.NodeEntry.NodeName
+            node.NodeAddr = resp.NodeEntry.NodeAddr
+            nodes[resp.Src] = node
+        }
+    }
+}
+
+func forwardToken(conn net.Conn, payload *Token) {
     var next string
     var curElmt *RingInfo
     var ok bool
@@ -91,7 +224,7 @@ func forwardToken(payload *Token) {
          return
     }
 
-    nextNode,ok := nodes[curElmt.nextNode]
+    nextNode,ok := nodes[curElmt.NextNode]
     if ok == false {
         fmt.Printf("Could not retrieve the  next node\n");
         return;
@@ -101,57 +234,74 @@ func forwardToken(payload *Token) {
     np.Src = myname
     np.Dst = next
     np.DstAddr = nextNode.NodeAddr;
-     
-    forwardPacket(np); 
 }
 
-func updateTokenRing(p *NetworkPacket, pos string, broadcast bool) {
-    var newnode, nextnode, curnode, prevnode *RingInfo
+func 
+updateTokenRing(conn net.Conn, enc *gob.Encoder, dec *gob.Decoder, 
+                p *NetworkPacket, pos string, broadcast bool) int {
+    var srcRingEntry, nxtRingEntry, curRingEntry *RingInfo
     var ok bool
     var ring map[string]*RingInfo
-    nextnode = nil;
-    prevnode = nil;
-    nodeToAdd := new(Node)
- 
+    nxtRingEntry = nil;
+    var nodeToAdd *Node
+
     docID := p.Payload.DocID
     ring, ok = tokenring[docID]
     if ok == false {
         fmt.Printf("Doc ID %s not found\n", docID);
-        return
+        if p.AckNeeded == true {
+            p.Ptype = "ACK-FAIL"
+            enc.Encode(p)
+        }
+
+        _, ok = nodes[p.Src]
+        if ok == false {
+            // Close this connection since no nodes are using this conenction
+        }
+
+        return -1
     }
 
-    newnode, ok = ring[p.Src];
+    srcRingEntry, ok = ring[p.Payload.NodeDetails.NodeName];
     printTokenRing(ring);
     if ok == false {
-        curnode = ring[pos]
-        if(curnode != nil) {
-            nextnode = ring[curnode.nextNode]
-            prevnode = ring[curnode.prevNode]
-        }
+        curRingEntry = ring[pos]
+        numelem := len(ring)
+        fmt.Printf("Lnght of ring  is %d\n", numelem)
+        fmt.Printf("Inserting at pos: %s\n", pos)
+        srcRingEntry = new(RingInfo);
+        if(numelem == 1) {
+            srcRingEntry.PrevNode = pos;
+            srcRingEntry.NextNode = pos;
 
-        newnode = new(RingInfo);
-        newnode.prevNode = pos;
- 
-        if nextnode == nil {
-            newnode.nextNode = pos
+            curRingEntry.PrevNode = p.Payload.NodeDetails.NodeName;
+            curRingEntry.NextNode = p.Payload.NodeDetails.NodeName;
+
+            ring[p.Payload.NodeDetails.NodeName] = srcRingEntry;
+
         } else {
-            newnode.nextNode = curnode.nextNode
+
+            curRingEntry = ring[pos]
+            nxtRingEntry = ring[curRingEntry.NextNode]
+
+            srcRingEntry.PrevNode = pos;
+            srcRingEntry.NextNode = curRingEntry.NextNode
+
+            nxtRingEntry.PrevNode = p.Payload.NodeDetails.NodeName
+            curRingEntry.NextNode = p.Payload.NodeDetails.NodeName
+ 
+            ring[p.Payload.NodeDetails.NodeName] = srcRingEntry;
         }
 
-        if(prevnode == nil) {
-            curnode.prevNode = p.Src
+        nodeToAdd, ok = nodes[p.Payload.NodeDetails.NodeName]
+        if ok == false {
+            fmt.Printf("Creating new node..\n");
+            nodeToAdd = new(Node)
+            nodeToAdd.NodeName = p.Payload.NodeDetails.NodeName
+            nodeToAdd.NodeAddr = p.Payload.NodeDetails.NodeAddr
+            nodeToAdd.conn = conn
+            nodes[p.Payload.NodeDetails.NodeName] = nodeToAdd
         }
-
-        curnode.nextNode = p.Src;
-        
-        if(nextnode != nil) {
-            nextnode.prevNode = p.Src
-        }
-
-        ring[p.Src] = newnode;
-        nodeToAdd.NodeName = p.Src
-        nodeToAdd.NodeAddr = p.SrcAddr
-        nodes[p.Src] = nodeToAdd
 
         // Broadcast the ring to all other nodes here later
         if(broadcast == true) {
@@ -163,9 +313,12 @@ func updateTokenRing(p *NetworkPacket, pos string, broadcast bool) {
     }
 
     printTokenRing(ring);
+    return 0
 }
 
-func broadcastRingUpdate(ring map[string]*RingInfo, newnode *Node, docID string) {
+func 
+broadcastRingUpdate(ring map[string]*RingInfo,
+                    newnode *Node, docID string) {
     var nodeToAdd Node;
 
     for key, value := range ring {
@@ -182,6 +335,7 @@ func broadcastRingUpdate(ring map[string]*RingInfo, newnode *Node, docID string)
         np := new(NetworkPacket)
 
         np.Ptype = "UPDATE-RING"
+        np.AckNeeded = false
         np.Src = myname
         np.Dst = key
         np.DstAddr = node.NodeAddr
@@ -191,43 +345,67 @@ func broadcastRingUpdate(ring map[string]*RingInfo, newnode *Node, docID string)
         nodeToAdd.NodeAddr = newnode.NodeAddr        
         np.Payload.NodeDetails = nodeToAdd
 
-        forwardPacket(np)
+        fmt.Printf("Sending ring update to %s with addr %s\n", 
+            node.NodeName, node.NodeAddr)
+        var conn net.Conn
+        var err error
+        conn,err = net.Dial("tcp", node.NodeAddr)
+        if err != nil {
+            fmt.Printf("broadcastRingUpdate: Error in net.Dial = %s\n", err)
+            continue
+        }
+
+        enc := gob.NewEncoder(conn)
+        enc.Encode(np)
     }
-    
+   
+    fmt.Printf("Done with broadcasting..\n") 
     return
 }
 
-func joinGroup(joinNodeAddr string, docID string, key string) {
+func joinGroup(joinNodename string, joinNodeAddr string, 
+               docID string, key string) {
     np := new(NetworkPacket)
     np.Ptype = "JOIN"
     np.Src = myname
+    np.SrcAddr = myaddr
     np.DstAddr = joinNodeAddr
+    np.AckNeeded = false
     np.Payload.DocID = docID
     np.Payload.Key = key
+    np.Payload.NodeDetails.NodeName = myname
+    np.Payload.NodeDetails.NodeAddr = myaddr
 
-    forwardPacket(np)
-}
-
-func forwardPacket(np *NetworkPacket) {
     var conn net.Conn
     var err error
 
-    conn,err = net.Dial("tcp", np.DstAddr)
-    if err != nil {
-        fmt.Printf("Could not create connection\n");
-        return
+    joinNode, ok := nodes[joinNodename]
+    if ok == false {
+        conn, err = net.Dial("tcp", joinNodeAddr)
+        if err != nil {
+            return
+        }
+    } else {
+        conn = joinNode.conn
     }
 
-    encoder := gob.NewEncoder(conn)
-    encoder.Encode(np)
-    conn.Close() 
-}
+    enc := gob.NewEncoder(conn)
+    enc.Encode(np)
+    dec := gob.NewDecoder(conn)
 
+    createDoc(docID)
+    delete(tokenring[docID], myname)
+    fetchRing(conn, dec, docID, key)
+    printTokenRing(tokenring[docID])
+    conn.Close()
+
+    return
+}
 
 func printTokenRing(ring map[string]*RingInfo) {
     for key, value := range ring {
         fmt.Printf("Key:%s, next-node:%s, prev-node:%s\n", 
-          key, value.nextNode, value.prevNode)
+          key, value.NextNode, value.PrevNode)
     }
 
     return;
@@ -266,6 +444,9 @@ func main() {
     fmt.Printf("myname=%s, myaddr=%s, myport=%s\n", 
         myname, myaddr, myport);
     initialize(myname, myaddr)
+
+    // Start taking inputs
+    go readConsoleInput()
 
     ln, err := net.Listen("tcp", myport)
 
