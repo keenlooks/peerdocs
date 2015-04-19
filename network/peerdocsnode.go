@@ -352,12 +352,44 @@ func handleToken(token Token)(Token){
 
 
 func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
+    req.ParseForm()
+    DocID := strings.Split(req.URL.Path, "docdelts/")[1]
+    dd := &Docdelts{}
+    //fmt.Println(string(buf))
+    decoder := json.NewDecoder(req.Body)
+    decoder.Decode(dd)
+    fmt.Println(dd)
     w.Header().Set("Access-Control-Allow-Credentials", "true")
     w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with,Content-Type")
     w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
     w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
+    if req.Method == "PUT"{
+        fmt.Println("updating "+DocID)
 
+        if !updateChanges(DocID, dd.Doccgs){ fmt.Println("update changes for "+DocID+" didnt work")}
+
+
+
+        //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
+        officialChanges[DocID] = append(officialChanges[DocID], localChanges[DocID]...)
+        localChanges[DocID] = nil
+        if updateFile(DocID){
+
+            //once file is updated clear official list
+            officialChanges[DocID]=nil
+        }    
+        //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
+
+
+        p := &dd
+        //encoder.Encode(p)
+        responseB, _ := json.Marshal(p)
+        responsestring := string(responseB)
+        //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
+        responsestring = "{\"docdelts\":"+responsestring+"}"
+        io.WriteString(w,responsestring)
+    }
     io.WriteString(w,"{'docdelt': {'id':"+strings.Split(req.URL.Path, "docdelts/")[1]+",'doccgs':[]}}")
 }
 
@@ -377,33 +409,7 @@ func updateChangesHttp(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
 
-    if req.Method == "PUT"{
-        fmt.Println("updating "+strconv.Itoa(dd.Id))
-
-        if !updateChanges(strconv.Itoa(dd.Id), dd.Doccgs){ fmt.Println("update changes for "+strconv.Itoa(dd.Id)+" didnt work")}
-
-
-
-        //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
-        DocID := strconv.Itoa(dd.Id)
-        officialChanges[DocID] = append(officialChanges[DocID], localChanges[DocID]...)
-        localChanges[DocID] = nil
-        if updateFile(DocID){
-
-            //once file is updated clear official list
-            officialChanges[DocID]=nil
-        }    
-        //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
-
-
-        p := &dd
-        //encoder.Encode(p)
-        responseB, _ := json.Marshal(p)
-        responsestring := string(responseB)
-        //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
-        responsestring = "{\"docdelts\":"+responsestring+"}"
-        io.WriteString(w,responsestring)
-    }else if req.Method == "POST"{
+    if req.Method == "POST"{
         io.WriteString(w,"{\"docdelt\": {\"id\":"+strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))+",\"doccgs\":[]}}")
     }else if req.Method == "OPTIONS"{
         //just headers
