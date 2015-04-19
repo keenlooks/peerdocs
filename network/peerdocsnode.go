@@ -387,10 +387,11 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
         responseB, _ := json.Marshal(p)
         responsestring := string(responseB)
         //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
-        responsestring = "{\"docdelts\":"+responsestring+"}"
+        responsestring = "{\"docdelt\":"+responsestring+"}"
         io.WriteString(w,responsestring)
-    }
-    io.WriteString(w,"{'docdelt': {'id':"+strings.Split(req.URL.Path, "docdelts/")[1]+",'doccgs':[]}}")
+    }else{
+    io.WriteString(w,"{\"docdelt\": {\"id\":"+strings.Split(req.URL.Path, "docdelts/")[1]+",\"doccgs\":[]}}")
+}
 }
 
 func updateChangesHttp(w http.ResponseWriter, req *http.Request){
