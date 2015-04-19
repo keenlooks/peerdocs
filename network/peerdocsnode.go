@@ -371,6 +371,11 @@ func updateChangesHttp(w http.ResponseWriter, req *http.Request){
     fmt.Println(dd)
     //dc.Title = req.URL.Query().Get("title")
     //dc.Ctext = req.FormValue("ctext")
+    w.Header().Set("Access-Control-Allow-Credentials", "true")
+    w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with,Content-Type")
+    w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
+    w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
+    w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
 
     if req.Method == "PUT"{
         fmt.Println("updating "+strconv.Itoa(dd.Id))
@@ -399,16 +404,11 @@ func updateChangesHttp(w http.ResponseWriter, req *http.Request){
         responsestring = "{\"docdelts\":"+responsestring+"}"
         io.WriteString(w,responsestring)
     }else if req.Method == "POST"{
-        io.WriteString(w,"{'docdelt': {'id':"+strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))+",'doccgs':[]}}")
+        io.WriteString(w,"{\"docdelt\": {\"id\":"+strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))+",\"doccgs\":[]}}")
     }else if req.Method == "OPTIONS"{
         //just headers
     }
 
-    w.Header().Set("Access-Control-Allow-Credentials", "true")
-    w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with,Content-Type")
-    w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
-    w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
-    w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
     return
 }
 
