@@ -604,9 +604,26 @@ func main() {
     
     //start listening for tokens
     //go listenToken()
+/*
+    host1 := Host{}
+    host2 := Host{}
+    host1.Name = "NodeA"
+    host2.Name = "NodeB"
+    host1.Address = ""
+    host2.Address = "128.237.198.207"
+    host1.DocID = "1"
+    host2.DocID = "1"
+    host1.DocKey = "1"
+    host2.DocKey = "1"
+    hostarray := Hostarray{}
+    hostarray.Hosts = []Host{host1,host2}
+    responseB, _ := json.Marshal(&hostarray)
+    fmt.Println(string(responseB))
+    return*/
+
     fmt.Println("Server running...")
     go initializeNetworkServer(os.Args[1], os.Args[2], os.Args[3])
-
+    joinGroupsFromDoc()
     //start listening for clients
     http.HandleFunc("/api/docmeta", listDocsHttp)
     http.HandleFunc("/api/docs", createDocHttp)
