@@ -37,9 +37,12 @@ type Host struct {
 }
 
 type Token struct {
-    DocID string
+    DocID       string
     Updates string     //used to update groupList with new member
     Changes []Change
+    Key         string
+    TokenData   string
+    NodeDetails Node
 }
 
 type Docdelts struct{
@@ -566,7 +569,7 @@ func joinGroupsFromDoc(){
         grouplist := Hostarray{}
         err = json.Unmarshal([]byte(strings.Split(strings.Split(string(buf), "<GroupList>")[1], "</GroupList>")[0]), &grouplist)
         for _, host := range grouplist.Hosts {
-            joinGroup(host.Name, host.Address, host.DocID, hostDocKey, true)
+            joinGroup(host.Name, host.Address, host.DocID, host.DocKey, true)
         }
     }
 
@@ -602,7 +605,7 @@ func main() {
     //start listening for tokens
     //go listenToken()
     fmt.Println("Server running...")
-    go initialize(os.Args[1], os.Args[2], os.Args[3])
+    go initializeNetworkServer(os.Args[1], os.Args[2], os.Args[3])
 
     //start listening for clients
     http.HandleFunc("/api/docmeta", listDocsHttp)
