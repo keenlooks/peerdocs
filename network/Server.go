@@ -8,7 +8,6 @@ import (
     "sync"
 )
 
-
 type NetworkPacket struct {
     Payload   Token
     RingEntry RingInfo
@@ -464,6 +463,7 @@ func joinGroup(joinNodename string, joinNodeAddr string,
 
        joinNodename = invitation.inviteeNodeName
        joinNodeAddr = invitation.inviteeNodeAddr 
+       key = invitation.Doc.Key
     }
 
     np := new(NetworkPacket)
@@ -481,14 +481,10 @@ func joinGroup(joinNodename string, joinNodeAddr string,
     var conn net.Conn
     var err error
 
-    joinNode, ok := nodes[joinNodename]
-    if ok == false {
-        conn, err = net.Dial("tcp", np.DstAddr)
-        if err != nil {
-            return
-        }
-    } else {
-        conn = joinNode.conn
+    conn, err = net.Dial("tcp", np.DstAddr)
+    if err != nil {
+        fmt.Printf("Failed to create connection to np.DstAddr\n")
+        return
     }
 
     enc := gob.NewEncoder(conn)
