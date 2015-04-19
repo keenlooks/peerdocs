@@ -25,6 +25,17 @@ var officialChanges = map[string][]Change{}
 var listenPort = ":8080"
 var tokenListenPort = ":12345"
 
+type Hostarray struct{
+    Hosts []Host            `json:"hosts"`
+}
+
+type Host struct {
+    Name string             `json:"name"`
+    Address string          `json:"address"`
+    DocID string            `json:"docid"`
+    DocKey string           `json:"dockey"`
+}
+
 type Token struct {
     DocID string
     Updates string     //used to update groupList with new member
@@ -195,7 +206,7 @@ func createDoc(dc Doccreate)(Docfetch){
     return *dm
 }
 
-func joinGroup(argument string)(bool){
+/*func joinGroup(argument string)(bool){
 	//will connect to token ring of group described by base64 encoded "argument"
     
     //create doc with contents 
@@ -209,7 +220,7 @@ func joinGroup(argument string)(bool){
     f.Close()
 
 	return true
-}
+}*/
 
 func leaveGroup(argument string)(bool){
 
@@ -542,6 +553,25 @@ func fetchDoc(DocID string)(Docfetch){
     }
 }*/
 
+func joinGroupsFromDoc(){
+    doclist := listDocs()
+    for _, doc := range doclist {
+        fopened, err := os.Open(docFolderPath+strconv.Itoa(doc.Id))
+        if(err != nil){
+            fmt.Println("cannot open doc")
+        }
+        buf := make([]byte, 256)
+        fopened.Read(buf)
+        //fmt.Println(string(buf))
+        grouplist := Hostarray{}
+        err = json.Unmarshal([]byte(strings.Split(strings.Split(string(buf), "<GroupList>")[1], "</GroupList>")[0]), &grouplist)
+        for _, host := range grouplist.Hosts {
+            joinGroup(host.Name, host.Address, host.DocID, hostDocKey, true)
+        }
+    }
+
+}
+
 func main() {
     //testing json request
     /*conn, err := net.Dial("tcp", "localhost:8080")
@@ -572,6 +602,7 @@ func main() {
     //start listening for tokens
     //go listenToken()
     fmt.Println("Server running...")
+    go initialize(os.Args[1], os.Args[2], os.Args[3])
 
     //start listening for clients
     http.HandleFunc("/api/docmeta", listDocsHttp)
