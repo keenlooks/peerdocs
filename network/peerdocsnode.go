@@ -209,6 +209,18 @@ func createDoc(dc Doccreate)(Docfetch){
     return *dm
 }
 
+func createDocWithId(dc Docfetch)(){
+    //create a file in the correct XML format with sections: <DocID>, <GroupKey>, <GroupList>, <Text>
+    
+    //create the file
+    f, err := os.Create(docFolderPath+strconv.Itoa(dc.Id))
+    if err != nil{
+        fmt.Println("Could not create file "+strconv.Itoa(dc.Id))
+    }
+
+    f.WriteString("<DocID>"+strconv.Itoa(dc.Id)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey>"+"TODO"/*generate secure key and make it base64*/+"</GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
+}
+
 /*func joinGroup(argument string)(bool){
 	//will connect to token ring of group described by base64 encoded "argument"
     
@@ -569,6 +581,7 @@ func joinGroupsFromDoc(){
         grouplist := Hostarray{}
         err = json.Unmarshal([]byte(strings.Split(strings.Split(string(buf), "<GroupList>")[1], "</GroupList>")[0]), &grouplist)
         for _, host := range grouplist.Hosts {
+            fmt.Println("joining "+host.Name+" at "+host.Address + " with ID "+host.DocID)
             joinGroup(host.Name, host.Address, host.DocID, host.DocKey, true)
         }
     }
