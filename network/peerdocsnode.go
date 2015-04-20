@@ -24,6 +24,7 @@ var localChanges = map[string][]Change{}
 var officialChanges = map[string][]Change{}
 var listenPort = ":8080"
 var tokenListenPort = ":12345"
+var backspacestring = "\\b"
 
 type Hostarray struct{
     Hosts []Host            `json:"hosts"`
@@ -356,6 +357,11 @@ func updateFile(DocID string)(bool){
         inputstringtext = inputstringtext[:change.Position]+change.Charstoappend+inputstringtext[change.Position:]
     }
 
+    //backspace out any backspaces in there
+    for strings.Index(inputstringtext,backspacestring) != -1 {
+        inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)-1] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
+    }
+
     fopened, err = os.Open(docFolderPath+DocID)
     if(err != nil){
         fmt.Println("cannot open "+DocID+" for writing")
@@ -382,7 +388,7 @@ func handleToken(token Token)(Token){
     for _, change := range token.Changes {
         for _,localchange := range localChanges[token.DocID]{
             if change.Position <= localchange.Position {
-                localchange.Position += len(change.Charstoappend)
+                localchange.Position += len(change.Charstoappend)//-(strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1)))
             }
         }
     }  
