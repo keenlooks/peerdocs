@@ -459,10 +459,10 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
         responseB, _ := json.Marshal(p)
         responsestring := string(responseB)
         //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
-        responsestring = "{\"docdelt\":"+responsestring+"}"
+        responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"doccgs\":[]}}"
         io.WriteString(w,responsestring)
     }else{
-    io.WriteString(w,"{\"docdelt\": {\"id\":"+strings.Split(req.URL.Path, "docdelts/")[1]+",\"doccgs\":[]}}")
+    io.WriteString(w,"{\"docdelt\": {\"docid\":"+strings.Split(req.URL.Path, "docdelts/")[1]+",\"doccgs\":[]}}")
 }
 }
 
@@ -483,7 +483,7 @@ func updateChangesHttp(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
 
     if req.Method == "POST"{
-        io.WriteString(w,"{\"docdelt\": {\"docid\":"+strconv.Itoa(dd.Id)+",\"doccgs\":[]}}")
+        io.WriteString(w,"{\"docdelt\": {\"id\":11223344,\"docid\":"+strconv.Itoa(dd.Id)+",\"doccgs\":[]}}")
     }else if req.Method == "OPTIONS"{
         //just headers
     }
