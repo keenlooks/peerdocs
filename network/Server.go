@@ -34,8 +34,11 @@ type Node struct {
 }
 
 type Docs struct {
-    DocID string
-    Key string
+    DocID         string
+    Key           string
+    cond          *sync.Cond
+    packetarrived bool
+    Payload       Token
 }
 
 type Invitations struct {
@@ -207,7 +210,17 @@ func handleConnection(conn net.Conn) {
         /* TODO: Call to the middleware here to update the token */
 
         if(p.Ptype == "FORWARD-TOKEN") {
-            forwardToken(p.Payload)
+            doc, ok := docs[p.Payload.DocID]
+            if(ok == false) {
+                fmt.Printf("Could not retrieve doc info for %s\n", p.Payload.DocID)
+                mutex.Unlock()
+                return
+            }
+            doc.cond.L.Lock()
+            doc.packetarrived = true
+            doc.Payload = p.Payload
+            doc.cond.L.Unlock()
+            doc.cond.Signal()
             mutex.Unlock()
         }
     }
@@ -262,7 +275,17 @@ func sendRing(conn net.Conn, enc *gob.Encoder, p *NetworkPacket) {
    
     np.Ptype = "FETCH-RING-DONE"
     enc.Encode(np)
-
+   
+    numelem := len(ring) 
+    if(numelem == 2) {
+        doc := docs[p.Payload.DocID]
+        doc.cond.L.Lock()
+        doc.packetarrived = true
+        //doc.Payload := new(Token)
+        doc.cond.L.Unlock()
+        doc.cond.Signal() 
+    }
+    
     return 
 }
 
@@ -329,45 +352,67 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
     }
 }
 
-func forwardToken(payload Token) {
+func forwardToken(docID string) {
     var next string
     var curElmt *RingInfo
     var ok bool
-
-    newToken := handleToken(payload)
-
-    ring,ok := tokenring[payload.DocID]
+    var doc *Docs
+    doc,ok = docs[docID]
 
     if ok == false {
-       fmt.Printf("Cannot forward to the provided DOC ID\n"); 
-       return
+        fmt.Printf("doc %s does not exist\n", docID)
+        return
     }
+
+    for {
+        doc.cond.L.Lock()
+        for doc.packetarrived == false {
+            doc.cond.Wait()
+        }
+        
+        doc.packetarrived = false
+        newToken := handleToken(doc.Payload)
+
+        ring,ok := tokenring[doc.Payload.DocID]
+
+        if ok == false {
+            fmt.Printf("Cannot forward to the provided DOC ID\n"); 
+            doc.cond.L.Unlock()
+            continue
+        }
    
-    curElmt, ok = ring[myname]
-    if ok == false {
-         fmt.Printf("Could not retrieve the next node name\n");
-         return
+        curElmt, ok = ring[myname]
+        if ok == false {
+            fmt.Printf("Could not retrieve the next node name\n");
+            doc.cond.L.Unlock()
+            continue
+        }
+        
+        nextNode,ok := nodes[curElmt.NextNode]
+        if ok == false {
+            fmt.Printf("Could not retrieve the  next node\n");
+            doc.cond.L.Unlock()
+            return;
+        }
+        
+        np := new(NetworkPacket);
+        np.Src = myname
+        np.SrcAddr = myaddr
+        np.Dst = next
+        np.DstAddr = nextNode.NodeAddr;
+        np.Payload = newToken
+        np.Ptype = "FORWARD-TOKEN"
+
+        conn, err := net.Dial("tcp", np.DstAddr)
+        if err != nil {
+            enc := gob.NewEncoder(conn)
+            enc.Encode(np) 
+        } else {
+            fmt.Printf("Error in dialing to %s. Error = %s\n", np.DstAddr, err)
+        }
+        doc.cond.L.Unlock()
     }
 
-    nextNode,ok := nodes[curElmt.NextNode]
-    if ok == false {
-        fmt.Printf("Could not retrieve the  next node\n");
-        return;
-    }
-    
-    np := new(NetworkPacket);
-    np.Src = myname
-    np.SrcAddr = myaddr
-    np.Dst = next
-    np.DstAddr = nextNode.NodeAddr;
-    np.Payload = newToken
-    np.Ptype = "FORWARD-TOKEN"
-
-    conn, err := net.Dial("tcp", np.DstAddr)
-    if err != nil {
-        enc := gob.NewEncoder(conn)
-        enc.Encode(np) 
-    }
     return
 }
 
@@ -543,7 +588,11 @@ func joinGroup(joinNodename string, joinNodeAddr string,
     doc := new(Docs)
     doc.DocID = docID
     doc.Key = key
+    doc.cond = &sync.Cond{L: &sync.Mutex{}}
+    doc.packetarrived = false
     docs[docID] = doc
+
+    go forwardToken(docID)
 
     return
 }
