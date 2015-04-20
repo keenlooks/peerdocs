@@ -50,7 +50,7 @@ type DocdeltsNoID struct{
 }
 
 type Docdelts struct{
-//  Id int                    `json:"id"`
+  Id int                    `json:"id"`
   Doccgs []Change           `json:"doccgs"`
 }
 
@@ -482,7 +482,7 @@ func updateChangesHttp(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
 
     if req.Method == "POST"{
-        io.WriteString(w,"{\"docdelt\": {\"id\":"+strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))+",\"doccgs\":[]}}")
+        io.WriteString(w,"{\"docdelt\": {\"id\":"+strconv.Itoa(dd.Id)+",\"doccgs\":[]}}")
     }else if req.Method == "OPTIONS"{
         //just headers
     }
