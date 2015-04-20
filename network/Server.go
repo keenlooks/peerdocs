@@ -6,6 +6,7 @@ import (
     "net"
     "encoding/gob"
     "sync"
+    "strconv"
 )
 
 type NetworkPacket struct {
@@ -292,6 +293,7 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
         re.PrevNode = resp.RingEntry.PrevNode
         if(doccreated == false) {
             createDocWithId(resp.DocCon)
+            doccreated = true
         }
         ring[resp.Src] = re
 
@@ -303,6 +305,17 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
             node.NodeAddr = resp.NodeEntry.NodeAddr
             nodes[resp.Src] = node
         }
+    }
+
+    var nodeDet *Node
+    var host Host
+    for nodename, _ := range ring {
+        nodeDet = nodes[nodename]
+        host.Name = nodeDet.NodeName
+        host.Address = nodeDet.NodeAddr
+        host.DocID = docID
+        host.DocKey = key
+        updateDocNodeWithId(host)
     }
 }
 
@@ -528,16 +541,21 @@ func printTokenRing(ring map[string]*RingInfo) {
 }
 
 func createDocument(docID string, key string) {
+    var dc Doccreate
+    dc.Title = docID
+  
+    df := createDoc(dc) 
+
     var ring map[string]*RingInfo;
     ring = make(map[string]*RingInfo);
     new_ring_node := new(RingInfo);
     ring[myname] = new_ring_node
-    tokenring[docID] = ring
+    tokenring[strconv.Itoa(df.Id)] = ring
 
     doc := new(Docs)
-    doc.DocID = docID
+    doc.DocID = strconv.Itoa(df.Id)
     doc.Key = key
-    docs[docID] = doc
+    docs[strconv.Itoa(df.Id)] = doc
 
     return;
 }
