@@ -239,6 +239,7 @@ func sendRing(conn net.Conn, enc *gob.Encoder, p *NetworkPacket) {
     np := new(NetworkPacket)
     var n *Node
     var textsent bool
+    textsent = false
 
     for key, value := range ring {
         np.RingEntry.PrevNode = value.PrevNode
@@ -270,8 +271,14 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
     fmt.Printf("Trying to fetch ring details for doc ID %s\n", docID)
     var re *RingInfo
     var doccreated bool
+    var ring map[string]*RingInfo
+    var ok bool
+    doccreated = false
 
-    ring, ok := tokenring[docID]
+    ring, ok = tokenring[docID]
+    if ok == false {
+        ring = make(map[string]*RingInfo)
+    }
 
     resp := &NetworkPacket{}
     var node *Node
@@ -281,6 +288,7 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
     for {
         err := dec.Decode(resp)
         if err != nil {
+            fmt.Printf("Error in decoding = %s\n", err)
             break;
         }
 
@@ -306,6 +314,8 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
             nodes[resp.Src] = node
         }
     }
+    tokenring[docID] = ring
+    printTokenRing(ring)
 
     var nodeDet *Node
     var host Host
@@ -517,8 +527,6 @@ func joinGroup(joinNodename string, joinNodeAddr string,
     enc.Encode(np)
     dec := gob.NewDecoder(conn)
 
-    createDocument(docID, key)
-    delete(tokenring[docID], myname)
     fetchRing(conn, dec, docID, key)
     printTokenRing(tokenring[docID])
     conn.Close()
@@ -532,9 +540,9 @@ func joinGroup(joinNodename string, joinNodeAddr string,
 }
 
 func printTokenRing(ring map[string]*RingInfo) {
-    for key, value := range ring {
-        fmt.Printf("Key:%s, next-node:%s, prev-node:%s\n", 
-          key, value.NextNode, value.PrevNode)
+    for nodename, value := range ring {
+        fmt.Printf("Nodename:%s, next-node:%s, prev-node:%s\n", 
+          nodename, value.NextNode, value.PrevNode)
     }
 
     return;
@@ -545,12 +553,18 @@ func createDocument(docID string, key string) {
     dc.Title = docID
   
     df := createDoc(dc) 
+    fmt.Printf("Created doc with id = %s\n", strconv.Itoa(df.Id))
 
     var ring map[string]*RingInfo;
     ring = make(map[string]*RingInfo);
     new_ring_node := new(RingInfo);
     ring[myname] = new_ring_node
     tokenring[strconv.Itoa(df.Id)] = ring
+
+    for nodename, value := range ring {
+        fmt.Printf("NodeName:%s, next-node:%s, prev-node:%s\n", 
+          nodename, value.NextNode, value.PrevNode)
+    }
 
     doc := new(Docs)
     doc.DocID = strconv.Itoa(df.Id)
@@ -561,10 +575,10 @@ func createDocument(docID string, key string) {
 }
 
 
-func initializeNetworkServer(myname string, myaddr string, myport string) {
-    //myname = os.Args[1]
-    //myaddr = os.Args[2]
-    //myport := os.Args[3]
+func initializeNetworkServer(name string, addr string, myport string) {
+    myname = name
+    myaddr = addr
+    //myport := port
 
     tokenring = make(map[string](map[string]*RingInfo))
     nodes     = make(map[string]*Node)
@@ -584,6 +598,7 @@ func initializeNetworkServer(myname string, myaddr string, myport string) {
     // Start taking inputs
     go readConsoleInput()
 
+    fmt.Printf("%s is starting the network server listen port at %s\n", myname, myaddr);
     ln, err := net.Listen("tcp", myport)
 
     if err != nil {

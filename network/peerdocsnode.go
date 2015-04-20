@@ -734,7 +734,7 @@ func main() {
     http.HandleFunc("/api/docs/", fetchDocHttp)
     http.HandleFunc("/api/docdelts", updateChangesHttp)
     http.HandleFunc("/api/docdelts/", updateChangesHttpGet)
-    err := http.ListenAndServe(listenPort, nil)
+    err := http.ListenAndServe(os.Args[4], nil)
     if err != nil {
         log.Fatal("ListenAndServe: ", err)
     }
