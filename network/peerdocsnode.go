@@ -219,6 +219,42 @@ func createDocWithId(dc Docfetch)(){
     }
 
     f.WriteString("<DocID>"+strconv.Itoa(dc.Id)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey>"+"TODO"/*generate secure key and make it base64*/+"</GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
+    f.Close()
+}
+
+func updateDocNodeWithId(host Host){
+    fopened, err := os.Open(docFolderPath+host.DocID)
+    if(err != nil){
+        fmt.Println("cannot open "+host.DocID+" for reading")
+    }
+    buf := make([]byte, 4096)
+    count, _ := fopened.Read(buf)
+    if count == 0 {fmt.Println("cannot read file "+host.DocID)}
+    fopened.Close()
+    inputstring := string(buf)
+    inputstringtext := strings.Split(strings.Split(inputstring, "<GroupList>")[1], "</GroupList>")[0]
+
+    grouplist := Hostarray{}
+    err = json.Unmarshal([]byte(inputstringtext), &grouplist)
+    grouplist.Hosts = append(grouplist.Hosts, host)
+    responseB, _ := json.Marshal(&grouplist)
+    inputstringtext = string(responseB)
+
+    fopened, err = os.Open(docFolderPath+host.DocID)
+    if(err != nil){
+        fmt.Println("cannot open "+host.DocID+" for writing")
+    }
+    buf = make([]byte, 4096)
+    count, _ = fopened.Read(buf)
+    fopened.Close()
+    inputstring = string(buf)
+    inputstringbeforetext := strings.Split(inputstring, "<GroupList>")[0]
+    inputstringaftertext := strings.Split(inputstring, "</GroupList>")[1]
+
+    outputstring := inputstringbeforetext+ "<GroupList>"+inputstringtext+"</GroupList>"+inputstringaftertext
+    ioutil.WriteFile(docFolderPath+host.DocID,[]byte(outputstring), 0666)
+
+
 }
 
 /*func joinGroup(argument string)(bool){
