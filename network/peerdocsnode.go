@@ -25,6 +25,9 @@ var officialChanges = map[string][]Change{}
 var listenPort = ":8080"
 var tokenListenPort = ":12345"
 var backspacestring = "\\b"
+var selfName = ""
+var selfAddr = ""
+var selfPort = ""
 
 type Hostarray struct{
     Hosts []Host            `json:"hosts"`
@@ -205,7 +208,16 @@ func createDoc(dc Doccreate)(Docfetch){
         return Docfetch{}
     }
 
-    f.WriteString("<DocID>"+strconv.Itoa(macaddr+counter)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey>"+"TODO"/*generate secure key and make it base64*/+"</GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
+    f.WriteString("<DocID>"+strconv.Itoa(macaddr+counter)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey>"+"TODO"/*generate secure key and make it base64*/+"</GroupKey>\n<GroupList></GroupList>\n<Text>"+dc.Ctext+"</Text>")
+
+    host := Host{}
+    host.Name = selfName
+    host.Address = selfAddr
+    host.DocID = strconv.Itoa(macaddr+counter)
+    host.DocKey = strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))
+
+    updateDocNodeWithId(host)
+
 
     dm := &Docfetch{}
 
@@ -228,7 +240,7 @@ func createDocWithId(dc Docfetch)(){
         fmt.Println("Could not create file "+strconv.Itoa(dc.Id))
     }
 
-    f.WriteString("<DocID>"+strconv.Itoa(dc.Id)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey>"+"TODO"/*generate secure key and make it base64*/+"</GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
+    f.WriteString("<DocID>"+strconv.Itoa(dc.Id)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey></GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
     f.Close()
 }
 
@@ -258,10 +270,10 @@ func updateDocNodeWithId(host Host){
     count, _ = fopened.Read(buf)
     fopened.Close()
     inputstring = string(buf)
-    inputstringbeforetext := strings.Split(inputstring, "<GroupList>")[0]
+    inputstringbeforetext := strings.Split(inputstring, "<GroupKey>")[0]
     inputstringaftertext := strings.Split(inputstring, "</GroupList>")[1]
 
-    outputstring := inputstringbeforetext+ "<GroupList>"+inputstringtext+"</GroupList>"+inputstringaftertext
+    outputstring := inputstringbeforetext+ "<GroupKey>"+host.DocKey+"</GroupKey><GroupList>"+inputstringtext+"</GroupList>"+inputstringaftertext
     ioutil.WriteFile(docFolderPath+host.DocID,[]byte(outputstring), 0666)
 
 
@@ -655,8 +667,10 @@ func joinGroupsFromDoc(){
         grouplist := Hostarray{}
         err = json.Unmarshal([]byte(strings.Split(strings.Split(string(buf), "<GroupList>")[1], "</GroupList>")[0]), &grouplist)
         for _, host := range grouplist.Hosts {
-            fmt.Println("joining "+host.Name+" at "+host.Address + " with ID "+host.DocID)
-            joinGroup(host.Name, host.Address, host.DocID, host.DocKey, true)
+            if(host.Name != selfName){
+                fmt.Println("joining "+host.Name+" at "+host.Address + " with ID "+host.DocID)
+                joinGroup(host.Name, host.Address, host.DocID, host.DocKey, true)
+            }
         }
     }
 
@@ -709,8 +723,11 @@ func main() {
     return*/
 
     fmt.Println("Server running...")
-    go initializeNetworkServer(os.Args[1], os.Args[2], os.Args[3])
-    //joinGroupsFromDoc()
+    selfName = os.Args[1]
+    selfAddr = os.Args[2]
+    selfPort = os.Args[3]
+    go initializeNetworkServer(selfName, selfAddr, selfPort)
+    joinGroupsFromDoc()
     //start listening for clients
     http.HandleFunc("/api/docmeta", listDocsHttp)
     http.HandleFunc("/api/docs", createDocHttp)
