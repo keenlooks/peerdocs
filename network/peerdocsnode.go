@@ -85,6 +85,7 @@ type Docfetch struct {
 }
 
 type Doccreate struct {
+    Cursorpos int           `json:"cursor"`
     Title string            `json:"title"`
     Ctext string            `json:"ctext"`
 }
@@ -223,7 +224,7 @@ func createDoc(dc Doccreate)(Docfetch){
 
 
     dm := &Docfetch{}
-
+    dm.Cursorpos = dc.Cursorpos
     dm.Id = macaddr + counter
     //fstat, _ := f.Stat()
     dm.Title = dc.Title
