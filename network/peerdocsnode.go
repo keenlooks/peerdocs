@@ -345,7 +345,7 @@ func updateFile(DocID string)(bool){
         fmt.Println("cannot open "+DocID+" for reading")
         return false
     }
-    buf := make([]byte, 4096)
+    buf := make([]byte, 8192)
     count, _ := fopened.Read(buf)
     if count == 0 {return false}
     fopened.Close()
@@ -464,6 +464,8 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
 
             //once file is updated clear official list
             officialChanges[DocID]=nil
+        }else{
+            fmt.Println("update failed")
         }    
         //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
 
