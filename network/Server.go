@@ -207,7 +207,7 @@ func handleConnection(conn net.Conn) {
         /* TODO: Call to the middleware here to update the token */
 
         if(p.Ptype == "FORWARD-TOKEN") {
-            forwardToken(&(p.Payload))
+            forwardToken(p.Payload)
             mutex.Unlock()
         }
     }
@@ -329,10 +329,13 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
     }
 }
 
-func forwardToken(payload *Token) {
+func forwardToken(payload Token) {
     var next string
     var curElmt *RingInfo
     var ok bool
+
+    newToken := handleToken(payload)
+
     ring,ok := tokenring[payload.DocID]
 
     if ok == false {
@@ -357,9 +360,15 @@ func forwardToken(payload *Token) {
     np.SrcAddr = myaddr
     np.Dst = next
     np.DstAddr = nextNode.NodeAddr;
+    np.Payload = newToken
+    np.Ptype = "FORWARD-TOKEN"
 
-    //conn, err := net.Dial("tcp", np.DstAddr)
-    //if err
+    conn, err := net.Dial("tcp", np.DstAddr)
+    if err != nil {
+        enc := gob.NewEncoder(conn)
+        enc.Encode(np) 
+    }
+    return
 }
 
 func 
