@@ -25,6 +25,7 @@ var officialChanges = map[string][]Change{}
 var listenPort = ":8080"
 var tokenListenPort = ":12345"
 var backspacestring = "\\b"
+var cursorPos = 0
 var selfName = ""
 var selfAddr = ""
 var selfPort = ""
@@ -55,6 +56,7 @@ type DocdeltsNoID struct{
 
 type Docdelts struct{
   Id int                    `json:"docid"`
+  Cursorpos int             `json:"cursor"`
   Doccgs []Change           `json:"doccgs"`
 }
 
@@ -77,6 +79,7 @@ type Docmeta struct {
 
 type Docfetch struct {
     Id int                  `json:"id"`
+    Cursorpos int           `json:"cursor"`
     Title string            `json:"title"`
     Ctext string            `json:"ctext"`
 }
@@ -365,15 +368,15 @@ func updateFile(DocID string)(bool){
     inputstringtext := strings.Split(strings.Split(inputstring, "<Text>")[1], "</Text>")[0]
     changes := officialChanges[DocID]
 
-    for _, change := range changes { 
+    for _, change := range changes {
         if len(inputstringtext) != 0{
             if !(change.Position < 0 || change.Position > len(inputstringtext)-1){
-            inputstringtext = inputstringtext[:change.Position]+change.Charstoappend+inputstringtext[change.Position:]
+                inputstringtext = inputstringtext[:change.Position]+change.Charstoappend+inputstringtext[change.Position:]
             }else{
                 if(change.Position == len(inputstringtext)){
                     inputstringtext = inputstringtext + change.Charstoappend
                 }else{
-                fmt.Println("received location out of bounds "+strconv.Itoa(change.Position)+" mod: "+change.Charstoappend)
+                    fmt.Println("received location out of bounds "+strconv.Itoa(change.Position)+" mod: "+change.Charstoappend)
                 }
             }
         }else{
@@ -387,7 +390,8 @@ func updateFile(DocID string)(bool){
             inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)-1] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
         }else{
             inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
-        }  
+        }
+        cursorPos -= len(backspacestring)
     }
 
     fopened, err = os.Open(docFolderPath+DocID)
@@ -474,7 +478,7 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
     if req.Method == "PUT"{
         fmt.Println("updating "+DocID)
-
+        cursorPos = dd.Cursorpos
         if !updateChanges(DocID, dd.Doccgs){ fmt.Println("update changes for "+DocID+" didnt work")}
 
 
@@ -497,10 +501,10 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
         responseB, _ := json.Marshal(p)
         responsestring := string(responseB)
         //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
-        responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"doccgs\":[]}}"
+        responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[]}}"
         io.WriteString(w,responsestring)
     }else{
-    io.WriteString(w,"{\"docdelt\": {\"docid\":"+strings.Split(req.URL.Path, "docdelts/")[1]+",\"doccgs\":[]}}")
+    io.WriteString(w,"{\"docdelt\": {\"docid\":"+strings.Split(req.URL.Path, "docdelts/")[1]+",\"cursor\":"+strconv.Itoa(cursorPos)+"\"doccgs\":[]}}")
 }
 }
 
@@ -523,7 +527,7 @@ func updateChangesHttp(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
 
     if req.Method == "POST"{
-        io.WriteString(w,"{\"docdelt\": {\"id\":11223344,\"docid\":"+strconv.Itoa(dd.Id)+",\"doccgs\":[]}}")
+        io.WriteString(w,"{\"docdelt\": {\"id\":11223344,\"docid\":"+strconv.Itoa(dd.Id)+",\"cursor\":"+strconv.Itoa(dd.Cursorpos)+"\"doccgs\":[]}}")
     }else if req.Method == "OPTIONS"{
         //just headers
     }
@@ -571,6 +575,7 @@ func fetchDoc(DocID string)(Docfetch){
 
     df := Docfetch{}
     df.Id,_ = strconv.Atoi(DocID)
+    df.Cursorpos = cursorPos
     df.Title = strings.Split(strings.Split(string(buf), "<Title>")[1], "</Title>")[0]
     df.Ctext = strings.Split(strings.Split(string(buf), "<Text>")[1], "</Text>")[0]
     return df
