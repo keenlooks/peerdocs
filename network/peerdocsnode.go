@@ -427,6 +427,8 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
     
     dd := &Docdelts{}
     //fmt.Println(string(buf))
+    buf := make([]byte, 11)
+    req.Body.Read(buf)
     decoder := json.NewDecoder(req.Body)
     decoder.Decode(dd)
     fmt.Println(dd)
@@ -471,6 +473,8 @@ func updateChangesHttp(w http.ResponseWriter, req *http.Request){
     req.ParseForm()
     dd := &Docdelts{}
     //fmt.Println(string(buf))
+    buf := make([]byte, 11)
+    req.Body.Read(buf)
     decoder := json.NewDecoder(req.Body)
     decoder.Decode(dd)
     fmt.Println(dd)
