@@ -9,11 +9,11 @@ PD.Docmeta=DS.Model.extend({
 });
 
 PD.Docdelt=DS.Model.extend({
-  doccgs:DS.hasMany('doccg')
+  docid:DS.attr('number'),
+  doccgs:DS.hasMany('doccg', {embedded: 'always'}),
 });
 
 PD.Doccg=DS.Model.extend({
-  docdelt:DS.belongsTo('docdelt'),
   location: DS.attr('number'),
   mod: DS.attr('string')
 });
@@ -56,6 +56,7 @@ PD.Docmeta.FIXTURES = [
    lastmod: '2014-05-27T12:54:01'
  },
 ];
+
 
 /*
 { 
