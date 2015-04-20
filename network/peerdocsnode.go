@@ -358,7 +358,11 @@ func updateFile(DocID string)(bool){
             if !(change.Position < 0 || change.Position > len(inputstringtext)-1){
             inputstringtext = inputstringtext[:change.Position]+change.Charstoappend+inputstringtext[change.Position:]
             }else{
+                if(change.Position == len(inputstringtext)){
+                    inputstringtext = inputstringtext + change.Charstoappend
+                }else{
                 fmt.Println("received location out of bounds "+strconv.Itoa(change.Position)+" mod: "+change.Charstoappend)
+                }
             }
         }else{
             inputstringtext = change.Charstoappend
