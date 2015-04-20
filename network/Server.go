@@ -1,19 +1,12 @@
 package main
 
 import (
-    "os"
+    //"os"
     "fmt"
     "net"
     "encoding/gob"
     "sync"
 )
-
-type Token struct {
-    DocID       string
-    Key         string
-    TokenData   string
-    NodeDetails Node
-}
 
 type NetworkPacket struct {
     Payload   Token
@@ -25,6 +18,7 @@ type NetworkPacket struct {
     SrcAddr   string
     DstAddr   string
     AckNeeded bool
+    DocCon    Docfetch
 }
 
 type RingInfo struct {
@@ -38,8 +32,21 @@ type Node struct {
     conn     net.Conn
 }
 
+type Docs struct {
+    DocID string
+    Key string
+}
+
+type Invitations struct {
+    Doc             Docs
+    inviteeNodeName string
+    inviteeNodeAddr string
+}
+
 var tokenring  map[string](map[string]*RingInfo)
 var nodes      map[string]*Node
+var docs       map[string]*Docs
+var invites    map[string]*Invitations
 
 var myname string
 var myaddr string
@@ -54,15 +61,20 @@ func readConsoleInput() {
 
     for {
         input = 0
-        fmt.Printf("Enter Choice: (1) for create (2) for join (3) to print rings\n");
+        fmt.Printf("Enter Choice: (1) Create (2) Join (3) Invite (4) Print rings (5) Display Invites\n");
         fmt.Scanf("%d", &input);
 
         switch input {
         case 1: fmt.Printf("Enter DOC ID: ");
                 docID = ""
                 fmt.Scanln(&docID)
-                fmt.Printf("Entered Details: DOC ID=%s\n", docID);
-                createDoc(docID)
+
+                fmt.Printf("Enter key for document: ")
+                key = ""
+                fmt.Scanln(&key)
+
+                fmt.Printf("Entered Details: DOC ID=%s, key=%s\n", docID, key);
+                createDocument(docID, key)
         case 2: fmt.Printf("Enter DOC ID: ");
                 docID = ""
                 fmt.Scanln(&docID)
@@ -81,14 +93,71 @@ func readConsoleInput() {
 
                 fmt.Printf("Entered Details: DOC ID=%s, Node Addr=%s, Node Name=%s, Key=%s\n", 
                     docID, joinNodeAddr, joinNodeName, key);
-                joinGroup(joinNodeName, joinNodeAddr, docID, key)
-        case 3: for key, value := range tokenring { 
+                joinGroup(joinNodeName, joinNodeAddr, docID, key, false)
+        case 3: fmt.Printf("Enter DOC ID: ");
+                docID = ""
+                fmt.Scanln(&docID)
+
+                fmt.Printf("Enter invitee addr: ");
+                joinNodeAddr = ""
+                fmt.Scanln(&joinNodeAddr) 
+
+                fmt.Printf("Enter invitee node name:");
+                joinNodeName = ""
+                fmt.Scanln(&joinNodeName)
+
+                fmt.Printf("Entered Details: DOC ID=%s, Invitee Node Addr=%s, Invitee Node Name=%s\n", 
+                    docID, joinNodeAddr, joinNodeName);
+                sendInvitation(joinNodeAddr,joinNodeName, docID)
+        case 4: for key, value := range tokenring { 
                     fmt.Printf("=====Printing ring for doc %s=====\n", key);
                     printTokenRing(value)
                 }
+        case 5: fmt.Printf("===== Invitations======\n");
+                for _, value := range invites { 
+                    fmt.Printf("DocID: %s, Key: %s, Invitor Name: %s, Invitor Addr: %s\n",
+                        value.Doc.DocID, value.Doc.Key, value.inviteeNodeName, value.inviteeNodeAddr);
+                }
+                fmt.Printf("=======================\n");
         }
     }
 
+    return
+}
+
+func sendInvitation(inviteAddr string, inviteNodename string, docID string) {
+    _, ok := docs[docID]
+    if ok == false {
+        fmt.Printf("Document doesnot exist\n")
+        return
+    }
+  
+    _, ok = nodes[inviteNodename]
+    if ok != false {
+        fmt.Printf("Node already part of ring for doc\n")
+        return
+    }
+
+    conn, err := net.Dial("tcp", inviteAddr)
+    if err != nil {
+        fmt.Printf("Could not establish connection to given node\n")
+        return
+    }
+
+    np := new(NetworkPacket)
+    np.Ptype = "INVITE"
+    np.Src = myname
+    np.SrcAddr = myaddr
+    np.Dst = inviteNodename
+    np.DstAddr = inviteAddr
+    np.AckNeeded = false
+    np.Payload.DocID = docID
+    np.Payload.Key = docs[docID].Key
+
+    enc := gob.NewEncoder(conn)
+    enc.Encode(np)
+
+    conn.Close()
     return
 }
 
@@ -128,15 +197,32 @@ func handleConnection(conn net.Conn) {
             sendRing(conn, enc, p)
             mutex.Unlock()
         }
+        
+        if(p.Ptype == "INVITE") {
+            receiveInvitation(conn, enc, dec, p) 
+            mutex.Unlock()
+        }
 
         /* TODO: Call to the middleware here to update the token */
 
         if(p.Ptype == "FORWARD-TOKEN") {
-            forwardToken(conn, &(p.Payload))
+            forwardToken(&(p.Payload))
             mutex.Unlock()
         }
     }
 
+    return
+}
+
+func receiveInvitation(conn net.Conn, enc *gob.Encoder, 
+                       dec *gob.Decoder, np *NetworkPacket) {
+    invite := new(Invitations)
+    invite.Doc.DocID = np.Payload.DocID
+    invite.Doc.Key = np.Payload.Key
+    invite.inviteeNodeName = np.Src
+    invite.inviteeNodeAddr = np.SrcAddr
+
+    invites[np.Src] = invite
     return
 }
 
@@ -151,21 +237,28 @@ func sendRing(conn net.Conn, enc *gob.Encoder, p *NetworkPacket) {
 
     np := new(NetworkPacket)
     var n *Node
+    var textsent bool
 
     for key, value := range ring {
         np.RingEntry.PrevNode = value.PrevNode
         np.RingEntry.NextNode = value.NextNode
         np.Src = key
+        if textsent == false {
+            np.DocCon = fetchDoc(p.Payload.DocID)
+            textsent = true
+        }
         enc.Encode(np)
 
         n = nodes[key]
         np.NodeEntry.NodeName = n.NodeName
         np.NodeEntry.NodeAddr = n.NodeAddr
+
+
         np.NodeEntry.conn = nil
         enc.Encode(np)
     }
    
-    np.Ptype = "FETCH_RING_DONE"
+    np.Ptype = "FETCH-RING-DONE"
     enc.Encode(np)
 
     return 
@@ -175,6 +268,7 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
                docID string, key string) {
     fmt.Printf("Trying to fetch ring details for doc ID %s\n", docID)
     var re *RingInfo
+    var doccreated bool
 
     ring, ok := tokenring[docID]
 
@@ -182,19 +276,23 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
     var node *Node
 
     fmt.Printf("Waiting for ring details..\n")
+    
     for {
         err := dec.Decode(resp)
         if err != nil {
             break;
         }
 
-        if resp.Ptype == "FETCH_RING_DONE" {
+        if resp.Ptype == "FETCH-RING-DONE" {
             break
         }
 
         re = new(RingInfo)
         re.NextNode = resp.RingEntry.NextNode
         re.PrevNode = resp.RingEntry.PrevNode
+        if(doccreated == false) {
+            createDocWithId(resp.DocCon)
+        }
         ring[resp.Src] = re
 
         node, ok = nodes[resp.Src]
@@ -208,11 +306,12 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
     }
 }
 
-func forwardToken(conn net.Conn, payload *Token) {
+func forwardToken(payload *Token) {
     var next string
     var curElmt *RingInfo
     var ok bool
     ring,ok := tokenring[payload.DocID]
+
     if ok == false {
        fmt.Printf("Cannot forward to the provided DOC ID\n"); 
        return
@@ -220,7 +319,7 @@ func forwardToken(conn net.Conn, payload *Token) {
    
     curElmt, ok = ring[myname]
     if ok == false {
-         fmt.Printf("Could not retrieve the  next node name\n");
+         fmt.Printf("Could not retrieve the next node name\n");
          return
     }
 
@@ -232,8 +331,12 @@ func forwardToken(conn net.Conn, payload *Token) {
     
     np := new(NetworkPacket);
     np.Src = myname
+    np.SrcAddr = myaddr
     np.Dst = next
     np.DstAddr = nextNode.NodeAddr;
+
+    //conn, err := net.Dial("tcp", np.DstAddr)
+    //if err
 }
 
 func 
@@ -303,7 +406,6 @@ updateTokenRing(conn net.Conn, enc *gob.Encoder, dec *gob.Decoder,
             nodes[p.Payload.NodeDetails.NodeName] = nodeToAdd
         }
 
-        // Broadcast the ring to all other nodes here later
         if(broadcast == true) {
             fmt.Printf("Broadcasting...\n");
             broadcastRingUpdate(ring, nodeToAdd, docID);
@@ -364,12 +466,25 @@ broadcastRingUpdate(ring map[string]*RingInfo,
 }
 
 func joinGroup(joinNodename string, joinNodeAddr string, 
-               docID string, key string) {
+               docID string, key string, bootstrap bool) {
+    if(bootstrap == false) {
+       invitation, ok := invites[joinNodename]
+       if(ok == false) {
+           fmt.Printf("No invitation recorded for this document\n")
+            return
+       }
+
+       joinNodename = invitation.inviteeNodeName
+       joinNodeAddr = invitation.inviteeNodeAddr 
+       key = invitation.Doc.Key
+    }
+
     np := new(NetworkPacket)
     np.Ptype = "JOIN"
     np.Src = myname
     np.SrcAddr = myaddr
     np.DstAddr = joinNodeAddr
+    np.Dst = joinNodename
     np.AckNeeded = false
     np.Payload.DocID = docID
     np.Payload.Key = key
@@ -379,25 +494,26 @@ func joinGroup(joinNodename string, joinNodeAddr string,
     var conn net.Conn
     var err error
 
-    joinNode, ok := nodes[joinNodename]
-    if ok == false {
-        conn, err = net.Dial("tcp", joinNodeAddr)
-        if err != nil {
-            return
-        }
-    } else {
-        conn = joinNode.conn
+    conn, err = net.Dial("tcp", np.DstAddr)
+    if err != nil {
+        fmt.Printf("Failed to create connection to np.DstAddr\n")
+        return
     }
 
     enc := gob.NewEncoder(conn)
     enc.Encode(np)
     dec := gob.NewDecoder(conn)
 
-    createDoc(docID)
+    createDocument(docID, key)
     delete(tokenring[docID], myname)
     fetchRing(conn, dec, docID, key)
     printTokenRing(tokenring[docID])
     conn.Close()
+
+    doc := new(Docs)
+    doc.DocID = docID
+    doc.Key = key
+    docs[docID] = doc
 
     return
 }
@@ -411,21 +527,31 @@ func printTokenRing(ring map[string]*RingInfo) {
     return;
 }
 
-func createDoc(docID string) {
+func createDocument(docID string, key string) {
     var ring map[string]*RingInfo;
     ring = make(map[string]*RingInfo);
     new_ring_node := new(RingInfo);
     ring[myname] = new_ring_node
-
     tokenring[docID] = ring
+
+    doc := new(Docs)
+    doc.DocID = docID
+    doc.Key = key
+    docs[docID] = doc
 
     return;
 }
 
 
-func initialize(myname string, myaddr string) {
+func initializeNetworkServer(myname string, myaddr string, myport string) {
+    //myname = os.Args[1]
+    //myaddr = os.Args[2]
+    //myport := os.Args[3]
+
     tokenring = make(map[string](map[string]*RingInfo))
-    nodes = make(map[string]*Node)
+    nodes     = make(map[string]*Node)
+    docs      = make(map[string]*Docs)
+    invites   = make(map[string]*Invitations)
 
     mutex = &sync.Mutex{};
 
@@ -433,17 +559,9 @@ func initialize(myname string, myaddr string) {
     this_node.NodeName = myname
     this_node.NodeAddr = myaddr
     nodes[myname] = this_node;
-}
 
-func main() {
-    fmt.Println("start");
-
-    myname = os.Args[1]
-    myaddr = os.Args[2]
-    myport := os.Args[3]
     fmt.Printf("myname=%s, myaddr=%s, myport=%s\n", 
         myname, myaddr, myport);
-    initialize(myname, myaddr)
 
     // Start taking inputs
     go readConsoleInput()
@@ -466,3 +584,8 @@ func main() {
         go handleConnection(conn)
     }
 }
+
+//func main() {
+//    fmt.Println("start");
+//
+//}

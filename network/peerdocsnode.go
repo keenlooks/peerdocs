@@ -25,10 +25,24 @@ var officialChanges = map[string][]Change{}
 var listenPort = ":8080"
 var tokenListenPort = ":12345"
 
+type Hostarray struct{
+    Hosts []Host            `json:"hosts"`
+}
+
+type Host struct {
+    Name string             `json:"name"`
+    Address string          `json:"address"`
+    DocID string            `json:"docid"`
+    DocKey string           `json:"dockey"`
+}
+
 type Token struct {
-    DocID string
+    DocID       string
     Updates string     //used to update groupList with new member
     Changes []Change
+    Key         string
+    TokenData   string
+    NodeDetails Node
 }
 
 type Docdelts struct{
@@ -195,7 +209,55 @@ func createDoc(dc Doccreate)(Docfetch){
     return *dm
 }
 
-func joinGroup(argument string)(bool){
+func createDocWithId(dc Docfetch)(){
+    //create a file in the correct XML format with sections: <DocID>, <GroupKey>, <GroupList>, <Text>
+    
+    //create the file
+    f, err := os.Create(docFolderPath+strconv.Itoa(dc.Id))
+    if err != nil{
+        fmt.Println("Could not create file "+strconv.Itoa(dc.Id))
+    }
+
+    f.WriteString("<DocID>"+strconv.Itoa(dc.Id)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey>"+"TODO"/*generate secure key and make it base64*/+"</GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
+    f.Close()
+}
+
+func updateDocNodeWithId(host Host){
+    fopened, err := os.Open(docFolderPath+host.DocID)
+    if(err != nil){
+        fmt.Println("cannot open "+host.DocID+" for reading")
+    }
+    buf := make([]byte, 4096)
+    count, _ := fopened.Read(buf)
+    if count == 0 {fmt.Println("cannot read file "+host.DocID)}
+    fopened.Close()
+    inputstring := string(buf)
+    inputstringtext := strings.Split(strings.Split(inputstring, "<GroupList>")[1], "</GroupList>")[0]
+
+    grouplist := Hostarray{}
+    err = json.Unmarshal([]byte(inputstringtext), &grouplist)
+    grouplist.Hosts = append(grouplist.Hosts, host)
+    responseB, _ := json.Marshal(&grouplist)
+    inputstringtext = string(responseB)
+
+    fopened, err = os.Open(docFolderPath+host.DocID)
+    if(err != nil){
+        fmt.Println("cannot open "+host.DocID+" for writing")
+    }
+    buf = make([]byte, 4096)
+    count, _ = fopened.Read(buf)
+    fopened.Close()
+    inputstring = string(buf)
+    inputstringbeforetext := strings.Split(inputstring, "<GroupList>")[0]
+    inputstringaftertext := strings.Split(inputstring, "</GroupList>")[1]
+
+    outputstring := inputstringbeforetext+ "<GroupList>"+inputstringtext+"</GroupList>"+inputstringaftertext
+    ioutil.WriteFile(docFolderPath+host.DocID,[]byte(outputstring), 0666)
+
+
+}
+
+/*func joinGroup(argument string)(bool){
 	//will connect to token ring of group described by base64 encoded "argument"
     
     //create doc with contents 
@@ -209,7 +271,7 @@ func joinGroup(argument string)(bool){
     f.Close()
 
 	return true
-}
+}*/
 
 func leaveGroup(argument string)(bool){
 
@@ -542,6 +604,26 @@ func fetchDoc(DocID string)(Docfetch){
     }
 }*/
 
+func joinGroupsFromDoc(){
+    doclist := listDocs()
+    for _, doc := range doclist {
+        fopened, err := os.Open(docFolderPath+strconv.Itoa(doc.Id))
+        if(err != nil){
+            fmt.Println("cannot open doc")
+        }
+        buf := make([]byte, 256)
+        fopened.Read(buf)
+        //fmt.Println(string(buf))
+        grouplist := Hostarray{}
+        err = json.Unmarshal([]byte(strings.Split(strings.Split(string(buf), "<GroupList>")[1], "</GroupList>")[0]), &grouplist)
+        for _, host := range grouplist.Hosts {
+            fmt.Println("joining "+host.Name+" at "+host.Address + " with ID "+host.DocID)
+            joinGroup(host.Name, host.Address, host.DocID, host.DocKey, true)
+        }
+    }
+
+}
+
 func main() {
     //testing json request
     /*conn, err := net.Dial("tcp", "localhost:8080")
@@ -571,8 +653,26 @@ func main() {
     
     //start listening for tokens
     //go listenToken()
-    fmt.Println("Server running...")
+/*
+    host1 := Host{}
+    host2 := Host{}
+    host1.Name = "NodeA"
+    host2.Name = "NodeB"
+    host1.Address = ""
+    host2.Address = "128.237.198.207"
+    host1.DocID = "1"
+    host2.DocID = "1"
+    host1.DocKey = "1"
+    host2.DocKey = "1"
+    hostarray := Hostarray{}
+    hostarray.Hosts = []Host{host1,host2}
+    responseB, _ := json.Marshal(&hostarray)
+    fmt.Println(string(responseB))
+    return*/
 
+    fmt.Println("Server running...")
+    go initializeNetworkServer(os.Args[1], os.Args[2], os.Args[3])
+    joinGroupsFromDoc()
     //start listening for clients
     http.HandleFunc("/api/docmeta", listDocsHttp)
     http.HandleFunc("/api/docs", createDocHttp)
