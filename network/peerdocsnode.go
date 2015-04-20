@@ -479,7 +479,7 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
 
 
 
-        //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
+       /* //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
         officialChanges[DocID] = append(officialChanges[DocID], localChanges[DocID]...)
         localChanges[DocID] = nil
         if updateFile(DocID){
@@ -490,7 +490,7 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
             fmt.Println("update failed")
         }    
         //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
-
+*/
        // dd.Id,_ = strconv.Atoi(DocID)
         p := &dd
         //encoder.Encode(p)
