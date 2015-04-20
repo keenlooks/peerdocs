@@ -45,13 +45,22 @@ type Token struct {
     NodeDetails Node
 }
 
-type Docdelts struct{
-  Id int                    `json:"id"`
+type DocdeltsNoID struct{
   Doccgs []Change           `json:"doccgs"`
 }
 
+type Docdelts struct{
+//  Id int                    `json:"id"`
+  Doccgs []Change           `json:"doccgs"`
+}
+
+type ChangeNoID struct {
+    Position int            `json:"location"`
+    Charstoappend string    `json:"mod"`
+}
+
 type Change struct {
-    Id int                  `json:"id"`
+//    Id int                  `json:"id"`
     Position int            `json:"location"`
     Charstoappend string    `json:"mod"`
 }
@@ -416,7 +425,7 @@ func handleToken(token Token)(Token){
 func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
     req.ParseForm()
     DocID := strings.Split(req.URL.Path, "docdelts/")[1]
-    dd := &Docdelts{}
+    dd := &DocdeltsNoID{}
     //fmt.Println(string(buf))
     decoder := json.NewDecoder(req.Body)
     decoder.Decode(dd)
@@ -443,7 +452,7 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
         }    
         //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
 
-        dd.Id,_ = strconv.Atoi(DocID)
+       // dd.Id,_ = strconv.Atoi(DocID)
         p := &dd
         //encoder.Encode(p)
         responseB, _ := json.Marshal(p)
