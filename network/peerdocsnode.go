@@ -354,12 +354,18 @@ func updateFile(DocID string)(bool){
     changes := officialChanges[DocID]
 
     for _, change := range changes { 
-        inputstringtext = inputstringtext[:change.Position]+change.Charstoappend+inputstringtext[change.Position:]
+        if len(inputstringtext) != 0{
+            inputstringtext = inputstringtext[:change.Position]+change.Charstoappend+inputstringtext[change.Position:]
+        }
     }
 
     //backspace out any backspaces in there
     for strings.Index(inputstringtext,backspacestring) != -1 {
-        inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)-1] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
+        if strings.Index(inputstringtext,backspacestring)-1 >= 0{
+            inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)-1] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
+        }else{
+            inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
+        }  
     }
 
     fopened, err = os.Open(docFolderPath+DocID)
