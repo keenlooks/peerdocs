@@ -85,9 +85,9 @@ type Docfetch struct {
 }
 
 type Doccreate struct {
-    Cursorpos int           `json:"cursor"`
     Title string            `json:"title"`
     Ctext string            `json:"ctext"`
+    Cursorpos int           `json:"cursor"`
 }
 
 type FrontEndRequest struct {
