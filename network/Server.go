@@ -18,6 +18,7 @@ type NetworkPacket struct {
     SrcAddr   string
     DstAddr   string
     AckNeeded bool
+    DocCon    Docfetch
 }
 
 type RingInfo struct {
@@ -236,16 +237,23 @@ func sendRing(conn net.Conn, enc *gob.Encoder, p *NetworkPacket) {
 
     np := new(NetworkPacket)
     var n *Node
+    var textsent bool
 
     for key, value := range ring {
         np.RingEntry.PrevNode = value.PrevNode
         np.RingEntry.NextNode = value.NextNode
         np.Src = key
+        if textsent == false {
+            np.DocCon = fetchDoc(p.Payload.DocID)
+            textsent = true
+        }
         enc.Encode(np)
 
         n = nodes[key]
         np.NodeEntry.NodeName = n.NodeName
         np.NodeEntry.NodeAddr = n.NodeAddr
+
+
         np.NodeEntry.conn = nil
         enc.Encode(np)
     }
@@ -260,6 +268,7 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
                docID string, key string) {
     fmt.Printf("Trying to fetch ring details for doc ID %s\n", docID)
     var re *RingInfo
+    var doccreated bool
 
     ring, ok := tokenring[docID]
 
@@ -267,6 +276,7 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
     var node *Node
 
     fmt.Printf("Waiting for ring details..\n")
+    
     for {
         err := dec.Decode(resp)
         if err != nil {
@@ -280,6 +290,9 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
         re = new(RingInfo)
         re.NextNode = resp.RingEntry.NextNode
         re.PrevNode = resp.RingEntry.PrevNode
+        if(doccreated == false) {
+            createDocWithId(resp.DocCon)
+        }
         ring[resp.Src] = re
 
         node, ok = nodes[resp.Src]
