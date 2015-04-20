@@ -50,7 +50,7 @@ type DocdeltsNoID struct{
 }
 
 type Docdelts struct{
-  Id int                    `json:"id"`
+  Id int                    `json:"docid"`
   Doccgs []Change           `json:"doccgs"`
 }
 
@@ -424,12 +424,13 @@ func handleToken(token Token)(Token){
 
 func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
     req.ParseForm()
-    DocID := strings.Split(req.URL.Path, "docdelts/")[1]
-    dd := &DocdeltsNoID{}
+    
+    dd := &Docdelts{}
     //fmt.Println(string(buf))
     decoder := json.NewDecoder(req.Body)
     decoder.Decode(dd)
     fmt.Println(dd)
+    DocID := strconv.Itoa(dd.Id) //strings.Split(req.URL.Path, "docdelts/")[1]
     w.Header().Set("Access-Control-Allow-Credentials", "true")
     w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with,Content-Type")
     w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
