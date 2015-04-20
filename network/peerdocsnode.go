@@ -356,6 +356,8 @@ func updateFile(DocID string)(bool){
     for _, change := range changes { 
         if len(inputstringtext) != 0{
             inputstringtext = inputstringtext[:change.Position]+change.Charstoappend+inputstringtext[change.Position:]
+        }else{
+            inputstringtext = change.Charstoappend
         }
     }
 
@@ -700,7 +702,7 @@ func main() {
 
     fmt.Println("Server running...")
     go initializeNetworkServer(os.Args[1], os.Args[2], os.Args[3])
-    joinGroupsFromDoc()
+    //joinGroupsFromDoc()
     //start listening for clients
     http.HandleFunc("/api/docmeta", listDocsHttp)
     http.HandleFunc("/api/docs", createDocHttp)
