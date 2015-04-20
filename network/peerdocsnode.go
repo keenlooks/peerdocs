@@ -504,7 +504,7 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
         responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[]}}"
         io.WriteString(w,responsestring)
     }else{
-    io.WriteString(w,"{\"docdelt\": {\"docid\":"+strings.Split(req.URL.Path, "docdelts/")[1]+",\"cursor\":"+strconv.Itoa(cursorPos)+"\"doccgs\":[]}}")
+    io.WriteString(w,"{\"docdelt\": {\"docid\":"+strings.Split(req.URL.Path, "docdelts/")[1]+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[]}}")
 }
 }
 
@@ -527,7 +527,7 @@ func updateChangesHttp(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
 
     if req.Method == "POST"{
-        io.WriteString(w,"{\"docdelt\": {\"id\":11223344,\"docid\":"+strconv.Itoa(dd.Id)+",\"cursor\":"+strconv.Itoa(dd.Cursorpos)+"\"doccgs\":[]}}")
+        io.WriteString(w,"{\"docdelt\": {\"id\":11223344,\"docid\":"+strconv.Itoa(dd.Id)+",\"cursor\":"+strconv.Itoa(dd.Cursorpos)+",\"doccgs\":[]}}")
     }else if req.Method == "OPTIONS"{
         //just headers
     }
