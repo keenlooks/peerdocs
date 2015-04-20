@@ -483,7 +483,7 @@ func updateChangesHttp(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
 
     if req.Method == "POST"{
-        io.WriteString(w,"{\"docdelt\": {\"id\":"+strconv.Itoa(dd.Id)+",\"doccgs\":[]}}")
+        io.WriteString(w,"{\"docdelt\": {\"docid\":"+strconv.Itoa(dd.Id)+",\"doccgs\":[]}}")
     }else if req.Method == "OPTIONS"{
         //just headers
     }
