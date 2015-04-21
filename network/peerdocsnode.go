@@ -37,6 +37,7 @@ type Hostarray struct{
 }
 
 type HostInvite struct {
+    TypeRequest string      `json:"type"`
     Name string             `json:"name"`
     Address string          `json:"address"`
     DocID int               `json:"docid"`
@@ -188,10 +189,17 @@ func inviteNodeHttp(w http.ResponseWriter, req *http.Request){
     hostinvite := &HostInvite{}
     decoder := json.NewDecoder(req.Body)
     decoder.Decode(hostinvite)
-    fmt.Println("inviting "+hostinvite.Name)
+    
 
     //Call backend
-    sendInvitation(hostinvite.Address, hostinvite.Name, strconv.Itoa(hostinvite.DocID))
+    if(hostinvite.TypeRequest == "invite"){
+        fmt.Println("inviting "+hostinvite.Name)
+        sendInvitation(hostinvite.Address, hostinvite.Name, strconv.Itoa(hostinvite.DocID))
+    }
+    if(hostinvite.TypeRequest == "join"){
+        fmt.Println("joining "+hostinvite.Name)
+        joinGroup(hostinvite.Name, hostinvite.Address, strconv.Itoa(hostinvite.DocID), hostinvite.DocKey, false)
+    }
 
     responseB, _ := json.Marshal(hostinvite)
     responsestring := string(responseB)
