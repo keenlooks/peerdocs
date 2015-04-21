@@ -207,7 +207,7 @@ func inviteNodeHttp(w http.ResponseWriter, req *http.Request){
     }
     if(hostinvite.TypeRequest == "join"){
         fmt.Println("joining "+ hostinvite.Name)
-        joinGroup(hostinvite.Name, hostinvite.Address, strconv.Itoa(hostinvite.DocID), hostinvite.DocKey, false)
+        joinGroup(nil, hostinvite.Address, strconv.Itoa(hostinvite.DocID), hostinvite.DocKey, false)
     }
 
     responseB, _ := json.Marshal(hostinvite)
