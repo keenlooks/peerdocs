@@ -25,8 +25,9 @@ setupController: function(controller,doc){
 
       var editor = new Quill('#editor-container', {
         modules: {
-          'toolbar': { container: '#formatting-container' }
-        }
+        toolbar: { container: '#toolbar-toolbar' }
+      },
+    theme: 'snow'
       });
       
 
@@ -87,7 +88,7 @@ setupController: function(controller,doc){
 
        // console.log(docdelt.serialize());
  
-        //console.log("hi");
+        console.log("00");
         var cursorp=0;
         if(editor.getSelection()!=null){
           cursorp=editor.getSelection().start;
@@ -95,19 +96,21 @@ setupController: function(controller,doc){
         docdelt.set("cursor",cursorp);
 
         docdelt.save().then(function(docdelt){
-          console.log(docdelt.get("doccgs").size());
+          console.log("111");
+          //console.log(docdelt.get("doccgs").size());
           if(docdelt.get("doccgs")!=null){
 
-              docdelt.get("doccgs").clear();
-          //console.log(docdelt.serialize());
+          docdelt.get("doccgs").clear();
+          
           doc.reload().then(function(doc){
-
+            console.log("222");
             editor.editor.disable();
             freeze=true;
             editor.setText(doc.get('ctext'));
             editor.setSelection(doc.get("cursor"),doc.get("cursor"));
             freeze=false;
             editor.editor.enable();
+            console.log("333");
 
             console.log(doc.get('ctext')+"\n@"+doc.get("cursor"));
             
