@@ -386,7 +386,7 @@ func handleToken(token Token)(Token){
             }
         }
     }
-    cursorPos[token.DocID] = totalchange
+    cursorPos[token.DocID] += totalchange
     token.Changes = append(token.Changes[numPastLocalChanges[token.DocID]:], localChanges[token.DocID]...)
     numPastLocalChanges[token.DocID] = len(localChanges[token.DocID])
     
@@ -435,7 +435,7 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
     if req.Method == "PUT"{
         //fmt.Println("updating "+DocID)
         if(docmodified[DocID]){ //if the handleToken was just called cursorPos is now the delta and not the actual position
-            cursorPos[DocID] += dd.Cursorpos
+            //cursorPos[DocID] += dd.Cursorpos
         }else{
             cursorPos[DocID] = dd.Cursorpos
         }
