@@ -592,6 +592,7 @@ func joinGroup(joinNodename string, joinNodeAddr string,
     doc.packetarrived = false
     docs[docID] = doc
 
+    go forwardToken(docID)
 
     return
 }
