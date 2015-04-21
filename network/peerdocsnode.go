@@ -30,7 +30,7 @@ var cursorPos = 0
 var selfName = ""
 var selfAddr = ""
 var selfPort = ""
-var docmodified = false
+var docmodified = map[string]bool{}
 
 type Hostarray struct{
     Hosts []Host            `json:"hosts"`
@@ -147,7 +147,11 @@ func listDocs()([]Docmeta){
         //fmt.Println(string(buf))
         if count == 0 {return []Docmeta{}}
         dm.Title = strings.Split(strings.Split(string(buf), "<Title>")[1], "</Title>")[0]
-        dm.Lastmod = f.ModTime().String()
+        if(docmodified[f.Name()]){
+            dm.Lastmod = "true" //f.ModTime().String()
+        }else{
+            dm.Lastmod = "false"
+        }
 		docList = append(docList, *dm)
 	}	
     return docList
@@ -445,7 +449,7 @@ func handleToken(token Token)(Token){
 
     //once file is updated clear official list
     officialChanges[token.DocID]=nil
-    docmodified = true
+    docmodified[token.DocID] = true
     return token
     }
     fmt.Println("could not update "+token.DocID)
@@ -509,9 +513,9 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
         responsestring := string(responseB)
         //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
         
-        if docmodified {
+        if docmodified[DocID] {
             responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[{\"id\":0,\"location\":0, \"mod\":\"a\"}]}}"
-            docmodified = false
+            docmodified[DocID] = false
         }else{
             responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[{\"id\":0,\"location\":0, \"mod\":\"a\"}]}}"
         }
