@@ -509,7 +509,7 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
             responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[{\"location\":0, \"mod\":\"a\"}]}}"
             docmodified = false
         }else{
-            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[]}}"
+            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[{\"location\":0, \"mod\":\"a\"}]}}"
         }
         io.WriteString(w,responsestring)
     }else{
