@@ -157,13 +157,44 @@ func listDocs()([]Docmeta){
     return docList
 }
 
-func createDocHttp(w http.ResponseWriter, req *http.Request){
+func inviteNodeHttp(w http.ResponseWriter, req *http.Request){
+
     if(req.Method == "OPTIONS"){
+        w.Header().Set("Access-Control-Allow-Credentials", "true")
+        w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with,Content-Type")
+        w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
+        w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
+        w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
+        return
+    }
+
     w.Header().Set("Access-Control-Allow-Credentials", "true")
     w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with,Content-Type")
     w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
     w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
+
+    req.ParseForm()
+    host := &Host{}
+    decoder := json.NewDecoder(req.Body)
+    decoder.Decode(host)
+    fmt.Println("inviting "+host.Name)
+
+    //DO FUNCTION
+
+    responseB, _ := json.Marshal(host)
+    responsestring := string(responseB)
+    responsestring="{\"id\"="+strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))+","+responsestring[1:]+"";
+    io.WriteString(w, responsestring)
+}
+
+func createDocHttp(w http.ResponseWriter, req *http.Request){
+    if(req.Method == "OPTIONS"){
+        w.Header().Set("Access-Control-Allow-Credentials", "true")
+        w.Header().Set("Access-Control-Allow-Headers","Origin,x-requested-with,Content-Type")
+        w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
+        w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
+        w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
         return
     }
     req.ParseForm()
@@ -176,7 +207,7 @@ func createDocHttp(w http.ResponseWriter, req *http.Request){
     fmt.Println(dc.Title)
 
     response := createDoc(*dc)
-   responseB, _ := json.Marshal(response)
+    responseB, _ := json.Marshal(response)
     responsestring := string(responseB)
     responsestring="{\"doc\":"+responsestring+"}";
     w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -256,6 +287,7 @@ func createDocWithId(dc Docfetch)(){
     f.WriteString("<DocID>"+strconv.Itoa(dc.Id)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey></GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
     f.Close()
 }
+
 
 func updateDocNodeWithId(host Host){
     fopened, err := os.Open(docFolderPath+host.DocID)
@@ -622,6 +654,7 @@ func main() {
     http.HandleFunc("/api/docs/", fetchDocHttp)
     http.HandleFunc("/api/docdelts", updateChangesHttp)
     http.HandleFunc("/api/docdelts/", updateChangesHttpGet)
+    http.HandleFunc("/api/invitations/", inviteNodeHttp)
     err := http.ListenAndServe(os.Args[4], nil)
     if err != nil {
         log.Fatal("ListenAndServe: ", err)
