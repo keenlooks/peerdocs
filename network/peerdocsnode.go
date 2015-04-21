@@ -182,7 +182,7 @@ func inviteNodeHttp(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
 
     req.ParseForm()
-    buf := make([]byte, 12)
+    buf := make([]byte, 14)
     req.Body.Read(buf)
 
     hostinvite := &HostInvite{}
@@ -194,7 +194,7 @@ func inviteNodeHttp(w http.ResponseWriter, req *http.Request){
 
     responseB, _ := json.Marshal(hostinvite)
     responsestring := string(responseB)
-    responsestring="{\"id\"="+strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))+","+responsestring[1:]+"";
+    responsestring="{\"invitation\": {\"id\"="+strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))+","+responsestring[1:]+"}";
     io.WriteString(w, responsestring)
 }
 
