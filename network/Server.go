@@ -276,10 +276,11 @@ func sendRing(conn net.Conn, enc *gob.Encoder, p *NetworkPacket) {
    
     numelem := len(ring) 
     if(numelem == 2) {
-        fmt.Printf("Initiating ring forwards..\n")
+        fmt.Printf("Initiating ring forwards for doc %s\n",  p.Payload.DocID)
         doc := docs[p.Payload.DocID]
         doc.cond.L.Lock()
         doc.packetarrived = true
+        doc.Payload.DocID = p.Payload.DocID
         doc.cond.L.Unlock()
         doc.cond.Signal() 
     }
@@ -372,7 +373,7 @@ func forwardToken(docID string) {
         fmt.Printf("[forwardToken] Calling handleToken for docID %s\n", docID)
         newToken := handleToken(doc.Payload)
 
-        ring,ok := tokenring[doc.Payload.DocID]
+        ring,ok := tokenring[docID]
 
         if ok == false {
             fmt.Printf("Cannot forward to the provided DOC ID\n"); 
