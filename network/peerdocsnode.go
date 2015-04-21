@@ -448,8 +448,8 @@ func handleToken(token Token)(Token){
     if updateFile(token.DocID){
 
     //once file is updated clear official list
+    docmodified[token.DocID] = officialChanges[token.DocID] != nil
     officialChanges[token.DocID]=nil
-    docmodified[token.DocID] = true
     return token
     }
     fmt.Println("could not update "+token.DocID)
