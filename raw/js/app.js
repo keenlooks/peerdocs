@@ -1,7 +1,12 @@
 window.PD = Ember.Application.create({});
 
 //PD.ApplicationAdapter = DS.FixtureAdapter.extend();
-
+PD.DocdeltSerializer = DS.RESTSerializer.extend(DS.EmbeddedRecordsMixin, {
+  attrs: {
+    doccgs: { embedded: 'always' }
+  }
+});
+/*
 DS.RESTSerializer.reopen({
     serializeBelongsTo: function(record, json, relationship) {
         var key = relationship.key,
@@ -18,7 +23,7 @@ DS.RESTSerializer.reopen({
     serializeHasMany: function(record, json, relationship) {
         var key = relationship.key,
             hasMany = Ember.get(record, key),
-            relationshipType = DS.RelationshipChange.determineRelationshipType(record.constructor, relationship);
+            relationshipType = record.constructor.determineRelationshipType(relationship);
         
         if (relationship.options.embedded === 'always') {
             if (hasMany && relationshipType === 'manyToNone' || relationshipType === 'manyToMany' ||
@@ -26,7 +31,8 @@ DS.RESTSerializer.reopen({
                 
                 json[key] = [];
                 hasMany.forEach(function(item, index){
-                    json[key].push(item.serialize());
+                  console.log(item);
+                    json[key].push(item.record.serialize());
                 });
             }
         
@@ -37,7 +43,7 @@ DS.RESTSerializer.reopen({
     }
 });
 
-
+*/
 
 
 

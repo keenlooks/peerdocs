@@ -38,6 +38,7 @@ setupController: function(controller,doc){
       });
 		*/
 
+    var idInc=0;
     //,'doccgs':[{'location':33,'mod':'ssss'},{'location':33,'mod':'dddd'}]}
     var docdelt = this.get("store").createRecord('docdelt',{"docid":doc.get("id"),"cursor":0});
     console.log(docdelt.serialize());
@@ -55,8 +56,9 @@ setupController: function(controller,doc){
 			   if(!freeze&&el.insert!=null && range!=null){
           cursorpos=range.start;
    				console.log("insert :"+el.insert+" @ "+(range.start-el.insert.length));
-          var cg=that.get("store").createRecord('doccg',{'location':(range.start-el.insert.length),'mod':el.insert});
+          var cg=that.get("store").createRecord('doccg',{'id':idInc,'location':(range.start-el.insert.length),'mod':el.insert});
           docdelt.get("doccgs").pushObject(cg);
+          idInc++;
 //docdelt.send('becomeDirty');
          //console.log(docdelt.serialize());
 			   }
@@ -68,15 +70,17 @@ setupController: function(controller,doc){
               //console.log(deletestr);
            }
 
-        var cg2=that.get("store").createRecord('doccg',{'location':(range.start+el.delete),'mod':deletestr});
+        var cg2=that.get("store").createRecord('doccg',{'id':idInc,'location':(range.start+el.delete),'mod':deletestr});
          console.log(deletestr);
          deletestr="";
           docdelt.get("doccgs").pushObject(cg2);
+          idInc++;
          }
 			   else if(!freeze&&el.insert!=null){
 				  console.log("insert :"+el.insert+" @ 0");
-          var cg0=that.get("store").createRecord('doccg',{'location':0,'mod':el.insert});
+          var cg0=that.get("store").createRecord('doccg',{'id':idInc,'location':0,'mod':el.insert});
           docdelt.get("doccgs").pushObject(cg0);
+          idInc++;
           //docdelt.send('becomeDirty');
            //console.log(docdelt.serialize());
 			   }

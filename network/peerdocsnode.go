@@ -510,10 +510,10 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
         //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
         
         if docmodified {
-            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[{\"location\":0, \"mod\":\"a\"}]}}"
+            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[{\"id\":0,\"location\":0, \"mod\":\"a\"}]}}"
             docmodified = false
         }else{
-            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[{\"location\":0, \"mod\":\"a\"}]}}"
+            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[{\"id\":0,\"location\":0, \"mod\":\"a\"}]}}"
         }
         io.WriteString(w,responsestring)
     }else{
