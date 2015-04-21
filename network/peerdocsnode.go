@@ -460,7 +460,7 @@ func handleToken(token Token)(Token){
 
     //update local files with changes
     if len(officialChanges[token.DocID]) == 0 {
-        //fmt.Println("no changes to "+token.DocID)
+        fmt.Println("no changes to "+token.DocID)
         return token
     }
 
@@ -649,6 +649,7 @@ func fetchDoc(DocID string)(Docfetch){
 func joinGroupsFromDoc(){
     doclist := listDocs()
     for _, doc := range doclist {
+        if(doc.Lastmod == "pending"){continue}
         fopened, err := os.Open(docFolderPath+strconv.Itoa(doc.Id))
         if(err != nil){
             fmt.Println("cannot open doc")
@@ -657,7 +658,9 @@ func joinGroupsFromDoc(){
         fopened.Read(buf)
         //fmt.Println(string(buf))
         grouplist := Hostarray{}
-        err = json.Unmarshal([]byte(strings.Split(strings.Split(string(buf), "<GroupList>")[1], "</GroupList>")[0]), &grouplist)
+        groupliststring := strings.Split(strings.Split(string(buf), "<GroupList>")[1], "</GroupList>")[0]
+        if groupliststring == "" {continue}
+        err = json.Unmarshal([]byte(groupliststring), &grouplist)
         for _, host := range grouplist.Hosts {
             if(host.Name != selfName){
                 fmt.Println("joining "+host.Name+" at "+host.Address + " with ID "+host.DocID)
@@ -665,7 +668,6 @@ func joinGroupsFromDoc(){
             }
         }
     }
-
 }
 
 func main() {
