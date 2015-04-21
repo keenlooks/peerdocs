@@ -566,6 +566,12 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
     fmt.Println(req.URL.Path)
     //fmt.Println(strings.Split(req.URL.Path, "docs/")[1])
     response := fetchDoc(strings.Split(req.URL.Path, "docs/")[1])
+
+    //if response has not changed
+    if(!docmodified[strconv.Itoa(response.Id)]){
+        response.Ctext = ""
+    }
+
     //convert response to correct structure
     responsestring := ""
     w.Header().Set("Access-Control-Allow-Credentials", "true")
