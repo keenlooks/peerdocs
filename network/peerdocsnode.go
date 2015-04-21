@@ -26,7 +26,7 @@ var numPastLocalChanges = map[string]int{}
 var listenPort = ":8080"
 var tokenListenPort = ":12345"
 var backspacestring = "\\b"
-var cursorPos = 0
+var cursorPos = map[string]int{}
 var selfName = ""
 var selfAddr = ""
 var selfPort = ""
@@ -401,7 +401,7 @@ func updateFile(DocID string)(bool){
         }else{
             inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
         }
-       // cursorPos -= len(backspacestring)
+       // cursorPos[DocID] -= len(backspacestring)
     }
 
     fopened, err = os.Open(docFolderPath+DocID)
@@ -489,7 +489,7 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
     if req.Method == "PUT"{
         fmt.Println("updating "+DocID)
-        cursorPos = dd.Cursorpos
+        cursorPos[DocID] = dd.Cursorpos
         if !updateChanges(DocID, dd.Doccgs){ fmt.Println("update changes for "+DocID+" didnt work")}
 
 
@@ -514,14 +514,14 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
         //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
         
         if docmodified[DocID] {
-            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[{\"id\":0,\"location\":0, \"mod\":\"a\"}]}}"
+            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos[DocID])+",\"doccgs\":[{\"id\":0,\"location\":0, \"mod\":\"a\"}]}}"
             docmodified[DocID] = false
         }else{
-            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[{\"id\":0,\"location\":0, \"mod\":\"a\"}]}}"
+            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos[DocID])+",\"doccgs\":[{\"id\":0,\"location\":0, \"mod\":\"a\"}]}}"
         }
         io.WriteString(w,responsestring)
     }else{
-    io.WriteString(w,"{\"docdelt\": {\"docid\":"+strings.Split(req.URL.Path, "docdelts/")[1]+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[]}}")
+    io.WriteString(w,"{\"docdelt\": {\"docid\":"+strings.Split(req.URL.Path, "docdelts/")[1]+",\"cursor\":"+strconv.Itoa(cursorPos[DocID])+",\"doccgs\":[]}}")
 }
 }
 
@@ -592,7 +592,7 @@ func fetchDoc(DocID string)(Docfetch){
 
     df := Docfetch{}
     df.Id,_ = strconv.Atoi(DocID)
-    df.Cursorpos = cursorPos
+    df.Cursorpos = cursorPos[DocID]
     df.Title = strings.Split(strings.Split(string(buf), "<Title>")[1], "</Title>")[0]
     df.Ctext = strings.Split(strings.Split(string(buf), "<Text>")[1], "</Text>")[0]
     return df
