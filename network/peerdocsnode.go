@@ -190,11 +190,12 @@ func inviteNodeHttp(w http.ResponseWriter, req *http.Request){
     decoder.Decode(hostinvite)
     fmt.Println("inviting "+hostinvite.Name)
 
-    //DO FUNCTION
+    //Call backend
+    sendInvitation(hostinvite.Address, hostinvite.Name, strconv.Itoa(hostinvite.DocID))
 
     responseB, _ := json.Marshal(hostinvite)
     responsestring := string(responseB)
-    responsestring="{\"invitation\": {\"id\"="+strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))+","+responsestring[1:]+"}";
+    responsestring="{\"invitation\": {\"id\":"+strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))+","+responsestring[1:]+"}";
     io.WriteString(w, responsestring)
 }
 
