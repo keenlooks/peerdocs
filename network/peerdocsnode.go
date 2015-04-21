@@ -664,7 +664,9 @@ func joinGroupsFromDoc(){
         for _, host := range grouplist.Hosts {
             if(host.Name != selfName){
                 fmt.Println("joining "+host.Name+" at "+host.Address + " with ID "+host.DocID)
-                joinGroup(host.Name, host.Address, host.DocID, host.DocKey, true)
+                if joinGroup(host.Name, host.Address, host.DocID, host.DocKey, true){
+                    break
+                }
             }
         }
     }
