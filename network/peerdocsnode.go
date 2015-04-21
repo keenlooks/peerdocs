@@ -386,7 +386,7 @@ func handleToken(token Token)(Token){
                 localchange.Position += len(change.Charstoappend)//-(strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1)))
             }
             if change.Position <= cursorPos[token.DocID] {
-                cursorPos[token.DocID] += (len(change.Charstoappend)-strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1))
+                cursorPos[token.DocID] = (len(change.Charstoappend)-strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1))
             }
         }
     }
@@ -435,7 +435,11 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
     if req.Method == "PUT"{
         //fmt.Println("updating "+DocID)
-        cursorPos[DocID] = dd.Cursorpos
+        if(docmodified[DocID]){ //if the handleToken was just called cursorPos is now the delta and not the actual position
+            cursorPos[DocID] += dd.Cursorpos
+        }else{
+            cursorPos[DocID] = dd.Cursorpos
+        }
         if !updateChanges(DocID, dd.Doccgs){ fmt.Println("update changes for "+DocID+" didnt work")}
 
 
