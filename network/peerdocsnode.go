@@ -222,7 +222,7 @@ func createDoc(dc Doccreate)(Docfetch){
     host.DocKey = strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))
 
     updateDocNodeWithId(host)
-
+    createDocument(host.DocID, host.DocKey)
 
     dm := &Docfetch{}
     dm.Cursorpos = dc.Cursorpos
