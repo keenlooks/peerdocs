@@ -392,7 +392,7 @@ func updateFile(DocID string)(bool){
         }else{
             inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
         }
-        cursorPos -= len(backspacestring)
+       // cursorPos -= len(backspacestring)
     }
 
     fopened, err = os.Open(docFolderPath+DocID)
@@ -484,8 +484,8 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
 
 
 
-       /* //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
-        officialChanges[DocID] = append(officialChanges[DocID], localChanges[DocID]...)
+        //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
+       /* officialChanges[DocID] = append(officialChanges[DocID], localChanges[DocID]...)
         localChanges[DocID] = nil
         if updateFile(DocID){
 
@@ -493,9 +493,9 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
             officialChanges[DocID]=nil
         }else{
             fmt.Println("update failed")
-        }    
+        }*/    
         //THIS PART NEEDS TO BE REMOVED AFTER INTEGRATION WITH TOKEN PASSING
-*/
+
        // dd.Id,_ = strconv.Atoi(DocID)
         p := &dd
         //encoder.Encode(p)
