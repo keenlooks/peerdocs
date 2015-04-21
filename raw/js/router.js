@@ -92,31 +92,35 @@ setupController: function(controller,doc){
 
        // console.log(docdelt.serialize());
  
-        console.log("00");
+        
         var cursorp=0;
         if(editor.getSelection()!=null){
           cursorp=editor.getSelection().start;
         }
         docdelt.set("cursor",cursorp);
-console.log("114");
+
         docdelt.save().then(function(docdelt){
-          console.log("111");
-          console.log(docdelt.get("doccgs").length);
+          console.log("PUT :"+docdelt.get("cursor")+":"+docdelt.get("doccgs").length);
+          //199docdelt.reload();
+          
           if(docdelt.get("doccgs").length!=0){
 
           docdelt.get("doccgs").clear();
           
           doc.reload().then(function(doc){
-            console.log("222");
+
+          if(doc.get('ctext')!=""){
+            console.log("FETCH: "+doc.get('ctext')+"\n@"+doc.get("cursor"));
             editor.editor.disable();
             freeze=true;
             editor.setText(doc.get('ctext'));
             editor.setSelection(doc.get("cursor"),doc.get("cursor"));
             freeze=false;
             editor.editor.enable();
-            console.log("333");
+          }
+            
 
-            console.log(doc.get('ctext')+"\n@"+doc.get("cursor"));
+            //console.log(doc.get('ctext')+"\n@"+doc.get("cursor"));
             
           });
 
@@ -129,7 +133,7 @@ console.log("114");
           doc.reload();
         });*/
 
-        },5000);
+        },3000);
 
 
        editor.insertText(0, doc.get('ctext'), 'bold', true);
