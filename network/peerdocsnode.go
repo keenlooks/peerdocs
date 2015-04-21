@@ -120,16 +120,15 @@ func listDocsHttp(w http.ResponseWriter, req *http.Request) {
     w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,PUT,PATCH,GET,POST")
     w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
-    //encoder := json.NewEncoder(w)
     p := &response
-    //encoder.Encode(p)
     responseB, _ := json.Marshal(p)
     responsestring = string(responseB)
-    //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
+
+    //Check for invitations
+
+
     responsestring="{\"docmetas\":"+responsestring+"}"
     io.WriteString(w,responsestring)
-    //encoder.Encode(p)
-    //io.WriteString(w, response)
 }
 
 func listDocs()([]Docmeta){    
@@ -161,7 +160,17 @@ func listDocs()([]Docmeta){
             dm.Lastmod = "false"
         }
 		docList = append(docList, *dm)
-	}	
+	}
+
+    //check for invites
+
+    for k,_ := range invites {
+        dm := &Docmeta{}
+        dm.Id, _ = strconv.Atoi(k)
+        dm.Title = "<not joined>"
+        dm.Lastmod = "pending"
+        docList = append(docList, *dm)
+    }
     return docList
 }
 
@@ -197,7 +206,7 @@ func inviteNodeHttp(w http.ResponseWriter, req *http.Request){
         sendInvitation(hostinvite.Address, hostinvite.Name, strconv.Itoa(hostinvite.DocID))
     }
     if(hostinvite.TypeRequest == "join"){
-        fmt.Println("joining "+hostinvite.Name)
+        fmt.Println("joining "+ hostinvite.Name)
         joinGroup(hostinvite.Name, hostinvite.Address, strconv.Itoa(hostinvite.DocID), hostinvite.DocKey, false)
     }
 
@@ -217,6 +226,8 @@ func createDocHttp(w http.ResponseWriter, req *http.Request){
         return
     }
     req.ParseForm()
+    buf := make([]byte, 5)
+    req.Body.Read(buf)
     dc := &Doccreate{}
     //fmt.Println(string(buf))
     decoder := json.NewDecoder(req.Body)
@@ -303,7 +314,7 @@ func createDocWithId(dc Docfetch)(){
     }
     numPastLocalChanges[strconv.Itoa(dc.Id)] = 0
 
-    f.WriteString("<DocID>"+strconv.Itoa(dc.Id)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey></GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
+    f.WriteString("<DocID>"+strconv.Itoa(dc.Id)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey></GroupKey>\n<GroupList>"+/*put yourself in group list*/"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
     f.Close()
 }
 
@@ -381,7 +392,6 @@ func updateFile(DocID string)(bool){
     inputstring := string(buf)
     inputstringtext := strings.Split(strings.Split(inputstring, "<Text>")[1], "</Text>")[0]
     changes := officialChanges[DocID]
-
     for _, change := range changes {
         if len(inputstringtext) != 0{
             if !(change.Position < 0 || change.Position > len(inputstringtext)-1){
