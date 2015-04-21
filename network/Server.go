@@ -404,7 +404,7 @@ func forwardToken(docID string) {
         np.Ptype = "FORWARD-TOKEN"
 
         conn, err := net.Dial("tcp", np.DstAddr)
-        if err != nil {
+        if err == nil {
             enc := gob.NewEncoder(conn)
             enc.Encode(np) 
         } else {
