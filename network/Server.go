@@ -627,13 +627,16 @@ func createDocument(docID string, key string) {
     doc := new(Docs)
     doc.DocID = strconv.Itoa(df.Id)
     doc.Key = key
+    doc.cond = &sync.Cond{L: &sync.Mutex{}}
+    doc.packetarrived = false
     docs[strconv.Itoa(df.Id)] = doc
 
     return;
 }
 
 
-func initializeNetworkServer(name string, addr string, myport string) {
+func 
+initializeNetworkServer(name string, addr string, myport string) {
     myname = name
     myaddr = addr
     //myport := port
