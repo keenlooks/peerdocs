@@ -477,7 +477,7 @@ func updateChangesHttp(w http.ResponseWriter, req *http.Request){
     req.Body.Read(buf)
     decoder := json.NewDecoder(req.Body)
     decoder.Decode(dd)
-    fmt.Println(dd)
+    //fmt.Println(dd)
     //dc.Title = req.URL.Query().Get("title")
     //dc.Ctext = req.FormValue("ctext")
     w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -506,7 +506,7 @@ func fetchOfficialChanges(DocID string)(official []Change){
 }
 
 func fetchDocHttp(w http.ResponseWriter, req *http.Request){
-    fmt.Println(req.URL.Path)
+    //fmt.Println(req.URL.Path)
     //fmt.Println(strings.Split(req.URL.Path, "docs/")[1])
     response := fetchDoc(strings.Split(req.URL.Path, "docs/")[1])
 
