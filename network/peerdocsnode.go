@@ -36,6 +36,13 @@ type Hostarray struct{
     Hosts []Host            `json:"hosts"`
 }
 
+type HostInvite struct {
+    Name string             `json:"name"`
+    Address string          `json:"address"`
+    DocID int               `json:"docid"`
+    DocKey string           `json:"dockey"`
+}
+
 type Host struct {
     Name string             `json:"name"`
     Address string          `json:"address"`
@@ -175,14 +182,14 @@ func inviteNodeHttp(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
 
     req.ParseForm()
-    host := &Host{}
+    hostinvite := &HostInvite{}
     decoder := json.NewDecoder(req.Body)
-    decoder.Decode(host)
-    fmt.Println("inviting "+host.Name)
+    decoder.Decode(hostinvite)
+    fmt.Println("inviting "+hostinvite.Name)
 
     //DO FUNCTION
 
-    responseB, _ := json.Marshal(host)
+    responseB, _ := json.Marshal(hostinvite)
     responsestring := string(responseB)
     responsestring="{\"id\"="+strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))+","+responsestring[1:]+"";
     io.WriteString(w, responsestring)
@@ -654,7 +661,7 @@ func main() {
     http.HandleFunc("/api/docs/", fetchDocHttp)
     http.HandleFunc("/api/docdelts", updateChangesHttp)
     http.HandleFunc("/api/docdelts/", updateChangesHttpGet)
-    http.HandleFunc("/api/invitations/", inviteNodeHttp)
+    http.HandleFunc("/api/invitations", inviteNodeHttp)
     err := http.ListenAndServe(os.Args[4], nil)
     if err != nil {
         log.Fatal("ListenAndServe: ", err)
