@@ -374,26 +374,24 @@ func updateFile(DocID string)(bool){
 }
 
 func handleToken(token Token)(Token){
-    //dec := gob.NewDecoder(conn)
-    //token := &Token{}
-    //dec.Decode(token)
-    //conn.Close()
-
     //update own changes and files with changes in token, update token
+    totalchange := 0
     for _, change := range token.Changes {
         for _,localchange := range localChanges[token.DocID]{
             if change.Position <= localchange.Position {
                 localchange.Position += len(change.Charstoappend)//-(strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1)))
             }
             if change.Position <= cursorPos[token.DocID] {
-                cursorPos[token.DocID] = (len(change.Charstoappend)-strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1))
+                totalchange += (len(change.Charstoappend)-strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1))
             }
         }
     }
+    cursorPos[token.DocID] = totalchange
     token.Changes = append(token.Changes[numPastLocalChanges[token.DocID]:], localChanges[token.DocID]...)
     numPastLocalChanges[token.DocID] = len(localChanges[token.DocID])
+    
     //clear local changes
-    localChanges[token.DocID] = nil
+    localChanges[token.DocID] = localChanges[token.DocID][:0]
 
     //make all changes official
     officialChanges[token.DocID] = append(officialChanges[token.DocID], token.Changes...)
@@ -401,14 +399,15 @@ func handleToken(token Token)(Token){
     //TODO - change GroupList based on updates string in token
 
     //update local files with changes
-    if officialChanges[token.DocID] != nil && updateFile(token.DocID){
-        //once file is updated clear official list
-        docmodified[token.DocID] = true
-        officialChanges[token.DocID]=nil
+    if len(officialChanges[token.DocID]) == 0 {
+        fmt.Println("no changes to "+token.DocID)
         return token
     }
-    if officialChanges[token.DocID] == nil {
-        fmt.Println("no changes to "+token.DocID)
+
+    if updateFile(token.DocID){
+        //once file is updated clear official list
+        docmodified[token.DocID] = true
+        officialChanges[token.DocID]=officialChanges[token.DocID][:0]
         return token
     }
 
@@ -521,19 +520,17 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
         docmodified[strconv.Itoa(response.Id)] = false
     }
 
-    //convert response to correct structure
+    //add headers
     responsestring := ""
     w.Header().Set("Access-Control-Allow-Credentials", "true")
     w.Header().Set("Access-Control-Allow-Headers","Content-Type,Origin,x-requested-with")
     w.Header().Set("Access-Control-Allow-Methods", "PUT,PATCH,GET,POST")
     w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length")
-    //encoder := json.NewEncoder(w)
+
     p := &response
-    //encoder.Encode(p)
     responseB, _ := json.Marshal(p)
     responsestring = string(responseB)
-    //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
     responsestring="{\"doc\":"+responsestring+"}"
     io.WriteString(w,responsestring)
 }
@@ -541,9 +538,12 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
 func fetchDoc(DocID string)(Docfetch){
 
     fopened, _ := os.Open("docs/"+DocID)
-    buf := make([]byte, 2048)
+    buf := make([]byte, 8192)
     count, _ := fopened.Read(buf)
-    if count == 0 {return Docfetch{}}
+    if count == 0 {
+        fmt.Println("cannot open "+DocID+" for fetching")
+        return Docfetch{}
+    }
 
     df := Docfetch{}
     df.Id,_ = strconv.Atoi(DocID)
