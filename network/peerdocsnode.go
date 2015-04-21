@@ -182,6 +182,9 @@ func inviteNodeHttp(w http.ResponseWriter, req *http.Request){
     w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
 
     req.ParseForm()
+    buf := make([]byte, 12)
+    req.Body.Read(buf)
+
     hostinvite := &HostInvite{}
     decoder := json.NewDecoder(req.Body)
     decoder.Decode(hostinvite)
