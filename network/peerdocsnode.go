@@ -22,6 +22,7 @@ import (
 var docFolderPath = "./docs/"
 var localChanges = map[string][]Change{}
 var officialChanges = map[string][]Change{}
+var numPastLocalChanges = map[string]int{}
 var listenPort = ":8080"
 var tokenListenPort = ":12345"
 var backspacestring = "\\b"
@@ -221,6 +222,8 @@ func createDoc(dc Doccreate)(Docfetch){
     host.DocID = strconv.Itoa(macaddr+counter)
     host.DocKey = strconv.Itoa(rand.Int()%int(math.Pow(2,float64(32))))
 
+
+    numPastLocalChanges[host.DocID] = 0
     updateDocNodeWithId(host)
     createDocument(host.DocID, host.DocKey)
 
@@ -244,6 +247,7 @@ func createDocWithId(dc Docfetch)(){
     if err != nil{
         fmt.Println("Could not create file "+strconv.Itoa(dc.Id))
     }
+    numPastLocalChanges[strconv.Itoa(dc.Id)] = 0
 
     f.WriteString("<DocID>"+strconv.Itoa(dc.Id)+"</DocID>\n<Title>"+dc.Title+"</Title>\n<GroupKey></GroupKey>\n<GroupList>"+"TODO"/*put yourself in group list*/+"</GroupList>\n<Text>"+dc.Ctext+"</Text>")
     f.Close()
@@ -426,8 +430,8 @@ func handleToken(token Token)(Token){
             }
         }
     }
-    token.Changes = append(token.Changes, localChanges[token.DocID]...)
-
+    token.Changes = append(token.Changes[numPastLocalChanges[token.DocID]:], localChanges[token.DocID]...)
+    numPastLocalChanges[token.DocID] = len(localChanges[token.DocID])
     //clear local changes
     localChanges[token.DocID] = nil
 
