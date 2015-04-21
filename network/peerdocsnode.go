@@ -374,6 +374,7 @@ func updateFile(DocID string)(bool){
 }
 
 func handleToken(token Token)(Token){
+    officialChanges[token.DocID]=officialChanges[token.DocID][:0]
     //update own changes and files with changes in token, update token
     for _, change := range token.Changes {
         for _,localchange := range localChanges[token.DocID]{
@@ -405,7 +406,6 @@ func handleToken(token Token)(Token){
     if updateFile(token.DocID){
         //once file is updated clear official list
         docmodified[token.DocID] = true
-        officialChanges[token.DocID]=officialChanges[token.DocID][:0]
         return token
     }
 
@@ -510,6 +510,38 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
     //fmt.Println(req.URL.Path)
     //fmt.Println(strings.Split(req.URL.Path, "docs/")[1])
     response := fetchDoc(strings.Split(req.URL.Path, "docs/")[1])
+    DocID := strconv.Itoa(response.Id)
+
+    recentlocalchanges := []Change{}
+    copy(recentlocalchanges, localChanges[DocID])
+
+    for _, change := range officialChanges[DocID] {
+        for _,localchange := range recentlocalchanges{
+            if change.Position <= localchange.Position {
+                localchange.Position += len(change.Charstoappend)//-(strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1)))
+            } 
+        }
+        if change.Position <= cursorPos[DocID] {
+            cursorPos[DocID] += (len(change.Charstoappend)-strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1))
+        }
+    }
+    inputstringtext := response.Ctext
+    for _, change := range recentlocalchanges {
+        if len(inputstringtext) != 0{
+            if !(change.Position < 0 || change.Position > len(inputstringtext)-1){
+                inputstringtext = inputstringtext[:change.Position]+change.Charstoappend+inputstringtext[change.Position:]
+            }else{
+                if(change.Position == len(inputstringtext)){
+                    inputstringtext = inputstringtext + change.Charstoappend
+                }else{
+                    fmt.Println("received location out of bounds "+strconv.Itoa(change.Position)+" mod: "+change.Charstoappend)
+                }
+            }
+        }else{
+            inputstringtext = change.Charstoappend
+        }
+    }
+    response.Ctext = inputstringtext
 
     //if response has not changed
     if(!docmodified[strconv.Itoa(response.Id)]){
