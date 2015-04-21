@@ -380,13 +380,12 @@ func handleToken(token Token)(Token){
         for _,localchange := range localChanges[token.DocID]{
             if change.Position <= localchange.Position {
                 localchange.Position += len(change.Charstoappend)//-(strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1)))
-            }
-            if change.Position <= cursorPos[token.DocID] {
-                totalchange += (len(change.Charstoappend)-strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1))
-            }
+            } 
+        }
+        if change.Position <= cursorPos[token.DocID] {
+            cursorPos[token.DocID] += (len(change.Charstoappend)-strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1))
         }
     }
-    cursorPos[token.DocID] += totalchange
     token.Changes = append(token.Changes[numPastLocalChanges[token.DocID]:], localChanges[token.DocID]...)
     numPastLocalChanges[token.DocID] = len(localChanges[token.DocID])
     
