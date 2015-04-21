@@ -276,10 +276,10 @@ func sendRing(conn net.Conn, enc *gob.Encoder, p *NetworkPacket) {
    
     numelem := len(ring) 
     if(numelem == 2) {
+        fmt.Printf("Initiating ring forwards..\n")
         doc := docs[p.Payload.DocID]
         doc.cond.L.Lock()
         doc.packetarrived = true
-        //doc.Payload := new(Token)
         doc.cond.L.Unlock()
         doc.cond.Signal() 
     }
@@ -356,7 +356,7 @@ func forwardToken(docID string) {
     var ok bool
     var doc *Docs
     doc,ok = docs[docID]
-
+    fmt.Printf("Forward Token thread created for doc %s\n", docID);
     if ok == false {
         fmt.Printf("doc %s does not exist\n", docID)
         return
@@ -369,6 +369,7 @@ func forwardToken(docID string) {
         }
         
         doc.packetarrived = false
+        fmt.Printf("[forwardToken] Calling handleToken for docID %s\n", docID)
         newToken := handleToken(doc.Payload)
 
         ring,ok := tokenring[doc.Payload.DocID]
@@ -590,7 +591,6 @@ func joinGroup(joinNodename string, joinNodeAddr string,
     doc.packetarrived = false
     docs[docID] = doc
 
-    go forwardToken(docID)
 
     return
 }
@@ -611,6 +611,7 @@ func createDocument(docID string, key string) {
     ring[myname] = new_ring_node
     tokenring[docID] = ring
 
+
     for nodename, value := range ring {
         fmt.Printf("NodeName:%s, next-node:%s, prev-node:%s\n", 
           nodename, value.NextNode, value.PrevNode)
@@ -622,6 +623,8 @@ func createDocument(docID string, key string) {
     doc.cond = &sync.Cond{L: &sync.Mutex{}}
     doc.packetarrived = false
     docs[docID] = doc
+
+    go forwardToken(docID)
 
     return;
 }
