@@ -519,7 +519,7 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
         
         if docmodified[DocID] {
             responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos[DocID])+",\"doccgs\":[{\"id\":0,\"location\":0, \"mod\":\"a\"}]}}"
-            docmodified[DocID] = false
+            //docmodified[DocID] = false
         }else{
             responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos[DocID])+",\"doccgs\":[]}}"
         }
@@ -574,6 +574,8 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
     //if response has not changed
     if(!docmodified[strconv.Itoa(response.Id)]){
         response.Title = "None"
+    }else{
+        docmodified[strconv.Itoa(response.Id)] = false
     }
 
     //convert response to correct structure
