@@ -375,7 +375,6 @@ func updateFile(DocID string)(bool){
 
 func handleToken(token Token)(Token){
     //update own changes and files with changes in token, update token
-    totalchange := 0
     for _, change := range token.Changes {
         for _,localchange := range localChanges[token.DocID]{
             if change.Position <= localchange.Position {
