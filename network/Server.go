@@ -1,12 +1,10 @@
 package main
 
 import (
-    //"os"
     "fmt"
     "net"
     "encoding/gob"
     "sync"
-    "strconv"
 )
 
 type NetworkPacket struct {
@@ -607,17 +605,11 @@ func printTokenRing(ring map[string]*RingInfo) {
 }
 
 func createDocument(docID string, key string) {
-    var dc Doccreate
-    dc.Title = docID
-  
-    df := createDoc(dc) 
-    fmt.Printf("Created doc with id = %s\n", strconv.Itoa(df.Id))
-
     var ring map[string]*RingInfo;
     ring = make(map[string]*RingInfo);
     new_ring_node := new(RingInfo);
     ring[myname] = new_ring_node
-    tokenring[strconv.Itoa(df.Id)] = ring
+    tokenring[docID] = ring
 
     for nodename, value := range ring {
         fmt.Printf("NodeName:%s, next-node:%s, prev-node:%s\n", 
@@ -625,11 +617,11 @@ func createDocument(docID string, key string) {
     }
 
     doc := new(Docs)
-    doc.DocID = strconv.Itoa(df.Id)
+    doc.DocID = docID
     doc.Key = key
     doc.cond = &sync.Cond{L: &sync.Mutex{}}
     doc.packetarrived = false
-    docs[strconv.Itoa(df.Id)] = doc
+    docs[docID] = doc
 
     return;
 }
