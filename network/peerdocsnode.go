@@ -446,12 +446,16 @@ func handleToken(token Token)(Token){
 
     //update local files with changes
     if officialChanges[token.DocID] != nil && updateFile(token.DocID){
-
-    //once file is updated clear official list
-    docmodified[token.DocID] = officialChanges[token.DocID] != nil
-    officialChanges[token.DocID]=nil
-    return token
+        //once file is updated clear official list
+        docmodified[token.DocID] = true
+        officialChanges[token.DocID]=nil
+        return token
     }
+    if officialChanges[token.DocID] == nil {
+        fmt.Println("no changes to "+token.DocID)
+        return token
+    }
+
     fmt.Println("could not update "+token.DocID)
     return token
 
@@ -569,7 +573,7 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
 
     //if response has not changed
     if(!docmodified[strconv.Itoa(response.Id)]){
-        response.Ctext = ""
+        response.Title = "None"
     }
 
     //convert response to correct structure
