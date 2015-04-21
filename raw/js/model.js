@@ -1,6 +1,7 @@
 PD.Doc = DS.Model.extend({
   title: DS.attr('string'),
-  ctext: DS.attr('string')
+  ctext: DS.attr('string'),
+  cursor:DS.attr('number')
 });
 
 PD.Docmeta=DS.Model.extend({
@@ -10,6 +11,7 @@ PD.Docmeta=DS.Model.extend({
 
 PD.Docdelt=DS.Model.extend({
   docid:DS.attr('number'),
+  cursor:DS.attr('number'),
   doccgs:DS.hasMany('doccg', {embedded: 'always'}),
 });
 

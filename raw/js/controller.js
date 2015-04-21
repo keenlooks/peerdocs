@@ -32,7 +32,8 @@ PD.PDController = Ember.ObjectController.extend({
         // implement your action here
       var newdoc = this.store.createRecord('doc', {
         title: 'untitled',
-        ctext: 'newdoc'
+        ctext: 'newdoc',
+        cursor: 0
       });
       var that=this;
       newdoc.save().then(function(saveddoc){that.transitionToRoute('PD.TEXT',saveddoc);}/*that.transitionToRoute('index')*/);

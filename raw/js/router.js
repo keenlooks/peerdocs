@@ -25,11 +25,12 @@ setupController: function(controller,doc){
 
       var editor = new Quill('#editor-container', {
         modules: {
-          'toolbar': { container: '#formatting-container' },
-          'link-tooltip': true,
-          'image-tooltip': true
+          'toolbar': { container: '#formatting-container' }
         }
       });
+      
+
+
       /*
       editor.on('selection-change', function(range) {
         console.log('selection-change', range)
@@ -37,7 +38,7 @@ setupController: function(controller,doc){
 		*/
 
     //,'doccgs':[{'location':33,'mod':'ssss'},{'location':33,'mod':'dddd'}]}
-    var docdelt = this.get("store").createRecord('docdelt',{"docid":doc.get("id")});
+    var docdelt = this.get("store").createRecord('docdelt',{"docid":doc.get("id"),"cursor":0});
     console.log(docdelt.serialize());
     docdelt.save();
     var freeze=false;
@@ -59,14 +60,14 @@ setupController: function(controller,doc){
          //console.log(docdelt.serialize());
 			   }
          else if(!freeze&&el.delete!=null && range!=null){
-           console.log("delete: "+el.delete+" @ "+(range.start));
+           console.log("delete: "+el.delete+" @ "+(range.start+el.delete)+" ** "+range.start);
            var deletestr="";
            for(var i=el.delete;i>0;i--){
               deletestr=deletestr+"\\b";
               //console.log(deletestr);
            }
 
-          var cg2=that.get("store").createRecord('doccg',{'location':range.start,'mod':deletestr});
+        var cg2=that.get("store").createRecord('doccg',{'location':(range.start+el.delete),'mod':deletestr});
          console.log(deletestr);
          deletestr="";
           docdelt.get("doccgs").pushObject(cg2);
@@ -87,20 +88,32 @@ setupController: function(controller,doc){
        // console.log(docdelt.serialize());
  
         //console.log("hi");
-        //docdelt.set("docid",doc.get("id"));
+        var cursorp=0;
+        if(editor.getSelection()!=null){
+          cursorp=editor.getSelection().start;
+        }
+        docdelt.set("cursor",cursorp);
+
         docdelt.save().then(function(docdelt){
-          docdelt.get("doccgs").clear();
+          console.log(docdelt.get("doccgs").size());
+          if(docdelt.get("doccgs")!=null){
+
+              docdelt.get("doccgs").clear();
           //console.log(docdelt.serialize());
           doc.reload().then(function(doc){
 
+            editor.editor.disable();
             freeze=true;
             editor.setText(doc.get('ctext'));
+            editor.setSelection(doc.get("cursor"),doc.get("cursor"));
             freeze=false;
+            editor.editor.enable();
 
-            console.log(doc.get('ctext'));
-            editor.setSelection(cursorpos,cursorpos);
+            console.log(doc.get('ctext')+"\n@"+doc.get("cursor"));
+            
           });
-          
+
+          }
 
         });
 
@@ -113,6 +126,7 @@ setupController: function(controller,doc){
 
 
        editor.insertText(0, doc.get('ctext'), 'bold', true);
+       editor.setSelection(doc.get("cursor"),doc.get("cursor"));
     });
 
 
