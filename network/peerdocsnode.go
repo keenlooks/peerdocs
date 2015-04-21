@@ -29,6 +29,7 @@ var cursorPos = 0
 var selfName = ""
 var selfAddr = ""
 var selfPort = ""
+var docmodified = false
 
 type Hostarray struct{
     Hosts []Host            `json:"hosts"`
@@ -424,7 +425,7 @@ func handleToken(token Token)(Token){
                 localchange.Position += len(change.Charstoappend)//-(strings.Count(change.Charstoappend,backspacestring)*(len(backspacestring)+1)))
             }
         }
-    }  
+    }
     token.Changes = append(token.Changes, localChanges[token.DocID]...)
 
     //clear local changes
@@ -440,6 +441,7 @@ func handleToken(token Token)(Token){
 
     //once file is updated clear official list
     officialChanges[token.DocID]=nil
+    docmodified = true
     return token
     }
     fmt.Println("could not update "+token.DocID)
@@ -502,7 +504,13 @@ func updateChangesHttpGet(w http.ResponseWriter, req *http.Request){
         responseB, _ := json.Marshal(p)
         responsestring := string(responseB)
         //responsestring = "Access-Control-Allow-Credentials:true\nAccess-Control-Allow-Headers:Origin,x-requested-with\nAccess-Control-Allow-Methods:PUT,PATCH,GET,POST\nAccess-Control-Allow-Origin:*\nAccess-Control-Expose-Headers:Content-Length" + responsestring
-        responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[]}}"
+        
+        if docmodified {
+            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[{\"location\":0, \"mod\":\"\"}]}}"
+            docmodified = false
+        }else{
+            responsestring = "{\"docdelt\": {\"id\":11223344,\"docid\":"+DocID+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[]}}"
+        }
         io.WriteString(w,responsestring)
     }else{
     io.WriteString(w,"{\"docdelt\": {\"docid\":"+strings.Split(req.URL.Path, "docdelts/")[1]+",\"cursor\":"+strconv.Itoa(cursorPos)+",\"doccgs\":[]}}")
