@@ -445,7 +445,7 @@ func handleToken(token Token)(Token){
     //TODO - change GroupList based on updates string in token
 
     //update local files with changes
-    if updateFile(token.DocID){
+    if officialChanges[token.DocID] != nil && updateFile(token.DocID){
 
     //once file is updated clear official list
     docmodified[token.DocID] = officialChanges[token.DocID] != nil
