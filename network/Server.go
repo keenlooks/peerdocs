@@ -95,8 +95,13 @@ func readConsoleInput() {
                 fmt.Printf("Entered Details: DOC ID=%s, Node Addr=%s, Node Name=%s, Key=%s\n", 
                     docID, joinNodeAddr, joinNodeName, key);
 */
+                fmt.Printf("Enter node name to contact: ");
+                joinNodeName = ""
+                fmt.Scanln(&joinNodeName)
+
                 fmt.Printf("Entered Details: DOC ID=%s\n", docID);
                 joinGroup(joinNodeName, joinNodeAddr, docID, key, false)
+	
         case 3: fmt.Printf("Enter DOC ID: ");
                 docID = ""
                 fmt.Scanln(&docID)
