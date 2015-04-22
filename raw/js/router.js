@@ -98,11 +98,11 @@ setupController: function(controller,doc){
           cursorp=editor.getSelection().start;
         }
         docdelt.set("cursor",cursorp);
-
+console.log("114");
         docdelt.save().then(function(docdelt){
           console.log("111");
-          //console.log(docdelt.get("doccgs").size());
-          if(docdelt.get("doccgs")!=null){
+          console.log(docdelt.get("doccgs").length);
+          if(docdelt.get("doccgs").length!=0){
 
           docdelt.get("doccgs").clear();
           
