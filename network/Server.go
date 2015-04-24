@@ -184,12 +184,12 @@ func handleConnection(conn net.Conn) {
         p = &NetworkPacket{}
         err = dec.Decode(p);
         if err != nil {
-            fmt.Printf("Error in handle connection, exiting. Error = %s\n", err);
+            //fmt.Printf("Error in handle connection, exiting. Error = %s\n", err);
             conn.Close()
             return
         }
 
-        fmt.Printf("Received : %+v\n", p);
+        //fmt.Printf("Received : %+v\n", p);
         mutex.Lock()
 
         if(p.Ptype == "JOIN") {
@@ -414,6 +414,7 @@ func forwardToken(docID string) {
 
         conn, err := net.Dial("tcp", np.DstAddr)
         if err == nil {
+            fmt.Printf("Sending in the changes to nextNode\n");
             enc := gob.NewEncoder(conn)
             enc.Encode(np) 
         } else {
