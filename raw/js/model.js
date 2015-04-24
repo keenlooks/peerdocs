@@ -7,7 +7,7 @@ PD.Doc = DS.Model.extend({
 
 PD.Docmeta=DS.Model.extend({
   title: DS.attr('string'),
-  lastmod: DS.attr('date')
+  lastmod: DS.attr('string')
 });
 
 PD.Docdelt=DS.Model.extend({

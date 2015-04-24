@@ -241,7 +241,7 @@
   </a>
   {{#each dmeta in model}}
  
-  {{#link-to "PD.TEXT" dmeta.id class="list-group-item"}}{{dmeta.title}}&nbsp;&nbsp;{{dmeta.lastmod}}{{/link-to}}
+  {{#link-to "PD.TEXT" dmeta.id class="list-group-item"}} ID: {{dmeta.id}}&nbsp;&nbsp; TITLE: {{dmeta.title}}&nbsp;&nbsp; MOD:{{dmeta.lastmod}}{{/link-to}}
 {{/each}}
 
 </script>

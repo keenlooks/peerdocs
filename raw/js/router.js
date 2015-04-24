@@ -9,6 +9,7 @@ PD.Router.map(function() {
 });
 
 var refresher;
+var refresher1;
 
 PD.PDTEXTRoute = Ember.Route.extend({
 
@@ -38,7 +39,7 @@ setupController: function(controller,doc){
       });
 		*/
 
-    var idInc=0;
+    var idInc=Math.floor((Math.random() * 10000) + 1);
     //,'doccgs':[{'location':33,'mod':'ssss'},{'location':33,'mod':'dddd'}]}
     var docdelt = this.get("store").createRecord('docdelt',{"docid":doc.get("id"),"cursor":0});
     console.log(docdelt.serialize());
@@ -162,10 +163,21 @@ model: function() {
 
 setupController: function(controller,docmeta){
 	   controller.set('model', docmeta);
+     Ember.run.schedule('afterRender', this, function(){
+        var refresher1=setInterval(function(){
+             console.log(docmeta);
+            docmeta.update();
+        },2000);
+
+     });
 },
 
 renderTemplate: function(controller) {
     this.render('pd/LIST', {controller: controller});
+  },
+
+   deactivate:function() {
+    clearInterval(refresher1);
   }
 });
 
