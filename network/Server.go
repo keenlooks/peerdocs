@@ -83,24 +83,6 @@ func readConsoleInput() {
                 joinNodeName = ""
                 key = ""
                 fmt.Scanln(&docID)
-/*
-                fmt.Printf("Enter node addr to contact: ");
-                joinNodeAddr = ""
-                fmt.Scanln(&joinNodeAddr)
-
-                fmt.Printf("Enter node name to contact: ");
-                joinNodeName = ""
-                fmt.Scanln(&joinNodeName)
-
-                fmt.Printf("Enter Doc key: ");
-                key = ""
-                fmt.Scanln(&key)
-                fmt.Printf("Entered Details: DOC ID=%s, Node Addr=%s, Node Name=%s, Key=%s\n", 
-                    docID, joinNodeAddr, joinNodeName, key);
-                fmt.Printf("Enter node name to contact: ");
-                joinNodeName = ""
-                fmt.Scanln(&joinNodeName)
-*/
 
                 fmt.Printf("Entered Details: DOC ID=%s\n", docID);
                 joinGroup(joinNodeName, joinNodeAddr, docID, key, false)
@@ -545,12 +527,16 @@ broadcastRingUpdate(ring map[string]*RingInfo,
 }
 
 func joinGroup(joinNodename string, joinNodeAddr string, 
-               docID string, key string, bootstrap bool) {
+               docID string, key string, bootstrap bool) bool {
+    if joinNodename == myname {
+        return false
+    }
+
     if(bootstrap == false) {
        invitation, ok := invites[docID]
        if(ok == false) {
            fmt.Printf("No invitation recorded for this document\n")
-            return
+            return false
        }
 
        delete(invites, docID)
@@ -577,7 +563,7 @@ func joinGroup(joinNodename string, joinNodeAddr string,
     conn, err = net.Dial("tcp", np.DstAddr)
     if err != nil {
         fmt.Printf("Failed to create connection to np.DstAddr\n")
-        return
+        return false
     }
 
     enc := gob.NewEncoder(conn)
@@ -597,7 +583,7 @@ func joinGroup(joinNodename string, joinNodeAddr string,
 
     go forwardToken(docID)
 
-    return
+    return true
 }
 
 func printTokenRing(ring map[string]*RingInfo) {
