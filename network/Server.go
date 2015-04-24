@@ -143,12 +143,6 @@ func sendInvitation(inviteAddr string, inviteNodename string, docID string) {
         return
     }
   
-    _, ok = nodes[inviteNodename]
-    if ok != false {
-        fmt.Printf("Node already part of ring for doc\n")
-        return
-    }
-
     conn, err := net.Dial("tcp", inviteAddr)
     if err != nil {
         fmt.Printf("Could not establish connection to given node\n")
