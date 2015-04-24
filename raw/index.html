@@ -51,7 +51,7 @@
                                 <i class="fa fa-flask fa-stack-1x text-primary"></i>
                             </span>
                                 <h4>
-                                    {{#link-to "PD.INVITE" class="navtext"}}INVITE{{/link-to}}
+                                     <a id="invitebtn" href='#' class="navtext">INVITE</a>
                                 </h4>
                                
                             </div>
@@ -77,7 +77,14 @@
         </div>
         <!-- /.container -->
     </section>
-
+<div id="test-invite" style="display:none">
+<input id="iip" type="text" value="ipaddr"/>
+<input id="idoc" type="text" value="docid"/>
+<input id="iname" type="text" value="name"/>
+<input id="ikey" type="text" value="key"/>
+<a  href='#' {{action "invite"}}>INVITE</a>
+<a  href='#' {{action "join"}}>JOIN</a>
+</div>
 
         <div class="site-wrapper">
         {{outlet}}
@@ -271,6 +278,11 @@
 
     $("#opennav").click(function(){
       $("#services").slideDown();
+      return false;
+    });
+
+    $("#invitebtn").click(function(){
+      $("#test-invite").slideDown();
       return false;
     });
   });

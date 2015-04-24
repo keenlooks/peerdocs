@@ -6881,7 +6881,12 @@ Selection = (function() {
   Selection.prototype.setRange = function(range, source) {
     var endNode, endOffset, ref, ref1, ref2, startNode, startOffset;
     if (range != null) {
-      ref = this._indexToPosition(range.start), startNode = ref[0], startOffset = ref[1];
+      ref = this._indexToPosition(range.start);
+      //Qing
+      if(ref==null){
+        return null;
+      }
+      startNode = ref[0], startOffset = ref[1];
       if (range.isCollapsed()) {
         ref1 = [startNode, startOffset], endNode = ref1[0], endOffset = ref1[1];
       } else {
@@ -6981,8 +6986,17 @@ Selection = (function() {
     if (this.doc.lines.length === 0) {
       return [this.doc.root, 0];
     }
-    ref = this.doc.findLeafAt(index, true), leaf = ref[0], offset = ref[1];
+    ref = this.doc.findLeafAt(index, true); 
+    if(ref==null){
+      return null;
+    }
+
+    leaf = ref[0], offset = ref[1];
+    if(leaf==null){
+      return null;
+    }
     return this._decodePosition(leaf.node, offset);
+    
   };
 
   Selection.prototype._positionToIndex = function(node, offset) {

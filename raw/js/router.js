@@ -103,28 +103,30 @@ setupController: function(controller,doc){
           console.log("PUT :"+docdelt.get("cursor")+":"+docdelt.get("doccgs").length);
           //199docdelt.reload();
           
-          if(docdelt.get("doccgs").length!=0){
+          //if(docdelt.get("doccgs").length!=0){
 
           docdelt.get("doccgs").clear();
-          
+    //setTimeout(function(){
           doc.reload().then(function(doc){
-
-          if(doc.get('ctext')!=""){
+          console.log(doc.get('title'));
+          if(doc.get('title')!="None"){
             console.log("FETCH: "+doc.get('ctext')+"\n@"+doc.get("cursor"));
-            editor.editor.disable();
+            //editor.editor.disable();
             freeze=true;
             editor.setText(doc.get('ctext'));
-            editor.setSelection(doc.get("cursor"),doc.get("cursor"));
+            console.log(doc.get("cursor"));
+            if(doc.get("cursor")>=0){
+              editor.setSelection(doc.get("cursor"),doc.get("cursor"));
+            }
             freeze=false;
-            editor.editor.enable();
+           // editor.editor.enable();
           }
-            
-
-            //console.log(doc.get('ctext')+"\n@"+doc.get("cursor"));
             
           });
 
-          }
+        // },2000);
+
+
 
         });
 
@@ -133,11 +135,12 @@ setupController: function(controller,doc){
           doc.reload();
         });*/
 
-        },3000);
+        },100);
 
 
        editor.insertText(0, doc.get('ctext'), 'bold', true);
        editor.setSelection(doc.get("cursor"),doc.get("cursor"));
+       docdelt.get("doccgs").clear();
     });
 
 

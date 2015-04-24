@@ -1,7 +1,8 @@
 PD.Doc = DS.Model.extend({
   title: DS.attr('string'),
   ctext: DS.attr('string'),
-  cursor:DS.attr('number')
+  cursor:DS.attr('number'),
+
 });
 
 PD.Docmeta=DS.Model.extend({
@@ -18,6 +19,14 @@ PD.Docdelt=DS.Model.extend({
 PD.Doccg=DS.Model.extend({
   location: DS.attr('number'),
   mod: DS.attr('string')
+});
+
+PD.Invitation=DS.Model.extend({
+  docid:DS.attr('number'),
+  address:DS.attr('string'),
+  type:DS.attr('string'),
+   name:DS.attr('string'),
+  dockey:DS.attr('string')
 });
 
 

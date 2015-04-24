@@ -40,6 +40,35 @@ PD.PDController = Ember.ObjectController.extend({
       return false;
       //+newdoc.get("id")
         //this.transitionToRoute('index');
-    }
+    },
+  invite:function(){
+    var invitation = this.store.createRecord('invitation', {
+        address: $("#iip").val(),
+        dockey: $("#ikey").val(),
+        name: $("#iname").val(),
+        docid:parseInt($("#idoc").val(),10),
+        type:"invite"
+      });
+    console.log("1");
+    invitation.save();
+ console.log("2");
+    return false;
+
+  },
+
+  join:function(){
+    var invitation = this.store.createRecord('invitation', {
+        //address: $("#iip").val(),
+        //dockey: $("#ikey").val(),
+       // name: $("#iname").val(),
+        docid:parseInt($("#idoc").val(),10),
+        type:"join"
+      });
+    
+    invitation.save();
+
+    return false;
+
+  }
 	}
 });
