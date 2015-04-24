@@ -379,7 +379,6 @@ func forwardToken(docID string) {
         }
         
         doc.packetarrived = false
-        fmt.Printf("[forwardToken] Calling handleToken for docID %s\n", docID)
         newToken := handleToken(doc.Payload)
 
         ring,ok := tokenring[docID]
@@ -414,7 +413,6 @@ func forwardToken(docID string) {
 
         conn, err := net.Dial("tcp", np.DstAddr)
         if err == nil {
-            fmt.Printf("Sending in the changes to nextNode\n");
             enc := gob.NewEncoder(conn)
             enc.Encode(np) 
         } else {
