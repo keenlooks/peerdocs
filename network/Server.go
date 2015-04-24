@@ -553,6 +553,7 @@ func joinGroup(joinNodename string, joinNodeAddr string,
             return
        }
 
+       delete(invites, docID)
        joinNodename = invitation.inviteeNodeName
        joinNodeAddr = invitation.inviteeNodeAddr 
        key = invitation.Doc.Key

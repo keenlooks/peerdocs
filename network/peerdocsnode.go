@@ -460,7 +460,7 @@ func handleToken(token Token)(Token){
 
     //update local files with changes
     if len(officialChanges[token.DocID]) == 0 {
-        fmt.Println("no changes to "+token.DocID)
+        //fmt.Println("no changes to "+token.DocID)
         return token
     }
 
