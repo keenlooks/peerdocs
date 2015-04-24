@@ -79,6 +79,9 @@ func readConsoleInput() {
                 createDocument(docID, key)
         case 2: fmt.Printf("Enter DOC ID: ");
                 docID = ""
+                joinNodeAddr = ""
+                joinNodeName = ""
+                key = ""
                 fmt.Scanln(&docID)
 /*
                 fmt.Printf("Enter node addr to contact: ");
@@ -94,10 +97,10 @@ func readConsoleInput() {
                 fmt.Scanln(&key)
                 fmt.Printf("Entered Details: DOC ID=%s, Node Addr=%s, Node Name=%s, Key=%s\n", 
                     docID, joinNodeAddr, joinNodeName, key);
-*/
                 fmt.Printf("Enter node name to contact: ");
                 joinNodeName = ""
                 fmt.Scanln(&joinNodeName)
+*/
 
                 fmt.Printf("Entered Details: DOC ID=%s\n", docID);
                 joinGroup(joinNodeName, joinNodeAddr, docID, key, false)
@@ -240,7 +243,7 @@ func receiveInvitation(conn net.Conn, enc *gob.Encoder,
     invite.inviteeNodeName = np.Src
     invite.inviteeNodeAddr = np.SrcAddr
 
-    invites[np.Src] = invite
+    invites[np.Payload.DocID] = invite
     return
 }
 
@@ -551,7 +554,7 @@ broadcastRingUpdate(ring map[string]*RingInfo,
 func joinGroup(joinNodename string, joinNodeAddr string, 
                docID string, key string, bootstrap bool) {
     if(bootstrap == false) {
-       invitation, ok := invites[joinNodename]
+       invitation, ok := invites[docID]
        if(ok == false) {
            fmt.Printf("No invitation recorded for this document\n")
             return
