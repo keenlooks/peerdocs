@@ -337,10 +337,12 @@ func fetchRing(conn net.Conn, dec *gob.Decoder,
 }
 
 func forwardToken(docID string) {
-    var next string
     var curElmt *RingInfo
     var ok bool
     var doc *Docs
+    var conn net.Conn;
+    var err error
+
     doc,ok = docs[docID]
     fmt.Printf("Forward Token thread created for doc %s\n", docID);
     if ok == false {
@@ -374,7 +376,7 @@ func forwardToken(docID string) {
         
         nextNode,ok := nodes[curElmt.NextNode]
         if ok == false {
-            fmt.Printf("Could not retrieve the  next node\n");
+            fmt.Printf("Could not retrieve the next node\n");
             doc.cond.L.Unlock()
             return;
         }
@@ -382,17 +384,28 @@ func forwardToken(docID string) {
         np := new(NetworkPacket);
         np.Src = myname
         np.SrcAddr = myaddr
-        np.Dst = next
-        np.DstAddr = nextNode.NodeAddr;
         np.Payload = newToken
         np.Ptype = "FORWARD-TOKEN"
 
-        conn, err := net.Dial("tcp", np.DstAddr)
+        for {
+            conn, err = net.Dial("tcp", nextNode.NodeAddr)
+            if err == nil {
+                break
+            }
+            curElmt = ring[curElmt.NextNode]
+            if curElmt.NextNode == myname {
+                break;
+            }
+            nextNode,ok = nodes[curElmt.NextNode]
+        }
+
         if err == nil {
+            np.Dst = curElmt.NextNode
+            np.DstAddr = nextNode.NodeAddr;
             enc := gob.NewEncoder(conn)
             enc.Encode(np) 
         } else {
-            fmt.Printf("Error in dialing to %s. Error = %s\n", np.DstAddr, err)
+            fmt.Printf("Error in dialing to %s. Error = %s\n", nextNode.NodeAddr, err)
         }
         doc.cond.L.Unlock()
     }
