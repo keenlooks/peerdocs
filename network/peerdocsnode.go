@@ -571,7 +571,7 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
     //fmt.Println(req.URL.Path)
     //fmt.Println(strings.Split(req.URL.Path, "docs/")[1])
     response := fetchDoc(strings.Split(req.URL.Path, "docs/")[1])
-    /*DocID := strconv.Itoa(response.Id)
+    DocID := strconv.Itoa(response.Id)
 
     recentlocalchanges := []Change{}
     copy(recentlocalchanges, localChanges[DocID])
@@ -602,7 +602,7 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
             inputstringtext = change.Charstoappend
         }
     }
-    response.Ctext = inputstringtext*/
+    response.Ctext = inputstringtext
 
     //if response has not changed
     if(!docmodified[strconv.Itoa(response.Id)]){
