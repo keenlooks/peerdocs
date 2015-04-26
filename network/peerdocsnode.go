@@ -571,9 +571,9 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
     //fmt.Println(req.URL.Path)
     //fmt.Println(strings.Split(req.URL.Path, "docs/")[1])
     response := fetchDoc(strings.Split(req.URL.Path, "docs/")[1])
-    DocID := strconv.Itoa(response.Id)
+    /*DocID := strconv.Itoa(response.Id)
 
-    /*recentlocalchanges := []Change{}
+    recentlocalchanges := []Change{}
     copy(recentlocalchanges, localChanges[DocID])
 
     for _, change := range officialChanges[DocID] {
