@@ -602,6 +602,17 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
             inputstringtext = change.Charstoappend
         }
     }
+    
+
+    for strings.Index(inputstringtext,backspacestring) != -1 {
+        if strings.Index(inputstringtext,backspacestring)-1 >= 0{
+            inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)-1] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
+        }else{
+            inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
+        }
+       // cursorPos[DocID] -= len(backspacestring)
+    }
+
     response.Ctext = inputstringtext
 
     //if response has not changed
