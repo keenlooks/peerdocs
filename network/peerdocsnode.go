@@ -149,7 +149,7 @@ func listDocs()([]Docmeta){
         if(err != nil){
             fmt.Println("cannot open "+f.Name()+" in list")
         }
-        buf := make([]byte, 128)
+        buf := make([]byte, 8192)
         count, _ := fopened.Read(buf)
         //fmt.Println(string(buf))
         if count == 0 {return []Docmeta{}}
@@ -226,7 +226,7 @@ func createDocHttp(w http.ResponseWriter, req *http.Request){
         return
     }
     req.ParseForm()
-    buf := make([]byte, 5)
+    buf := make([]byte, 7)
     req.Body.Read(buf)
     dc := &Doccreate{}
     //fmt.Println(string(buf))
