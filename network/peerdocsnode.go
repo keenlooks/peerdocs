@@ -616,7 +616,7 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
     response.Ctext = inputstringtext
 
     //if response has not changed
-    if(!docmodified[strconv.Itoa(response.Id)]){
+    if(docmodified[strconv.Itoa(response.Id)]){
         response.Title = "None"
     }else{
         docmodified[strconv.Itoa(response.Id)] = false
