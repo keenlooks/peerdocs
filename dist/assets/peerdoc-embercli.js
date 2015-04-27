@@ -106,9 +106,9 @@ define('peerdoc-embercli/controllers/pd', ['exports', 'ember'], function (export
           return false;
         }
         var invitation = this.store.createRecord('invitation', {
-          address: strs[0],
+          address: strs[1],
           dockey: 'xxxxx',
-          name: strs[1],
+          name: strs[0],
           docid: id,
           type: 'invite'
         });

@@ -139,10 +139,10 @@ position:absolute;
   height:35px;
   position: absolute;
 
-  width: 90%;
+  width: 80%;
   font-size: 15px;
   padding: 0 10px;
-  left:8%;  
+  left:15%;  
 }
 
 .sidebar ul li a {
@@ -166,8 +166,7 @@ position:absolute;
 
 
 .input-group{
-  width: 80%;
-  margin-left: 14%;
+  width: 100%;
 
 }
 .sidebar #list-wrapper{
@@ -222,6 +221,7 @@ span.glyphicon.white{
 
  display:none;
  margin-left:25px;
+ padding-left: 15%;
  margin-right:10px;
 }
 
