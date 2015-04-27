@@ -301,7 +301,7 @@ define('peerdoc-embercli/routes/pd', ['exports', 'ember'], function (exports, Em
     },
 
     clearAllTimer: function clearAllTimer() {
-      for (var i = 0; i < 5000; i++) {
+      for (var i = 0; i < 8000; i++) {
         if (this.refresher == null || i != this.refresher) {
           clearInterval(i);
         }
@@ -522,7 +522,9 @@ define('peerdoc-embercli/routes/pd/doc', ['exports', 'ember'], function (exports
             docdelt.clear();
             doc.reload();
           });*/
-        }, 300);
+        }, 100);
+
+        console.log("TimerHandler: "+refresher);
 
         editor.setText(doc.get('ctext'));
         editor.setSelection(doc.get('cursor'), doc.get('cursor'));
