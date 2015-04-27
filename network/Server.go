@@ -392,8 +392,10 @@ func forwardToken(docID string) {
             if err == nil {
                 break
             }
+            fmt.Printf("Error when dialing %s. Trying next node %s\n ", curElmt.NextNode)
             curElmt = ring[curElmt.NextNode]
             if curElmt.NextNode == myname {
+                fmt.Printf("End of ring, could not find anyone. Breaking out\n");
                 break;
             }
             nextNode,ok = nodes[curElmt.NextNode]
