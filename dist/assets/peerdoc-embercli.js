@@ -39,15 +39,15 @@ define('peerdoc-embercli/controllers/docmeta', ['exports', 'ember'], function (e
     isModified: (function () {
       var model = this.get('model');
 
-      //return model.get('lastmod')=="true";
-      return true;
+      return model.get('lastmod') == 'true';
+      //return true; 
     }).property('model.lastmod'),
 
     isPending: (function () {
       var model = this.get('model');
 
-      //return model.get('lastmod')=="pending";  
-      return true;
+      return model.get('lastmod') == 'pending';
+      //return true;
     }).property('model.lastmod') });
 
 });
@@ -1291,7 +1291,7 @@ define('peerdoc-embercli/tests/controllers/docmeta.jshint', function () {
 
   module('JSHint - controllers');
   test('controllers/docmeta.js should pass jshint', function() { 
-    ok(false, 'controllers/docmeta.js should pass jshint.\ncontrollers/docmeta.js: line 7, col 9, \'model\' is defined but never used.\ncontrollers/docmeta.js: line 14, col 9, \'model\' is defined but never used.\n\n2 errors'); 
+    ok(false, 'controllers/docmeta.js should pass jshint.\ncontrollers/docmeta.js: line 9, col 34, Expected \'===\' and instead saw \'==\'.\ncontrollers/docmeta.js: line 16, col 34, Expected \'===\' and instead saw \'==\'.\n\n2 errors'); 
   });
 
 });
