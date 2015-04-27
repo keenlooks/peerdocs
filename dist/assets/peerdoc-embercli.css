@@ -1,0 +1,254 @@
+a, u {
+    text-decoration: none;
+}
+
+a:hover{
+text-decoration: none;
+
+}
+::-webkit-scrollbar-track
+{
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  background-color: #F5F5F5;
+}
+
+::-webkit-scrollbar
+{
+  width: 6px;
+  background-color: #F5F5F5;
+}
+
+::-webkit-scrollbar-thumb
+{
+  background-color: #000000;
+}
+
+.hidden{
+
+  visibility: hidden;
+}
+html, body {margin:0;padding:0;height:100%;}
+ul{list-style-type: none; margin: 0 ;padding: 0}
+
+.ember-application, .ember-view,.site-wrapper {
+ display: table; 
+ width:100%;
+
+ /* For at least Firefox */
+ min-height: 100%;
+ padding:0;
+ } 
+
+#main{
+height:100%;
+position:absolute;
+}
+.sline{
+ height:40px;
+ margin-top:20px;
+ position: relative;
+
+
+}
+.navtext{
+
+	  color: rgb(255, 255, 255);
+	  box-sizing: border-box;
+	    display: inline;
+	    font-family: Helvetica, Arial, san-serif;
+	    font-size: 18px;
+	    font-weight: bold;
+	    text-align: center;
+}
+#services{
+	display: none;
+}
+
+#welcome{
+	 width: 100%;
+  height: 100%; /* For at least Firefox */
+  min-height: 100%;
+	  background: url('/assets/images/bg.jpg') no-repeat center ;
+	 background-size: cover;
+	  margin:0;
+	  padding: 0;
+	   display: table;
+}
+
+.text-vertical-center {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.btn-dark {
+  border-radius: 0;
+  color: #fff;
+  background-color: rgba(0,0,0,0.4);
+}
+.sidebar {
+  height: 100%;
+  background: #4D585E;
+  box-shadow: 1px 0px 10px rgba(0,0,0,.4);
+  float: left;
+  display: none;
+  background-repeat: no-repeat;
+  background-position: bottom center;
+  background-position-x: center;
+  background-position-y: 97%;
+  background-size: 40%;
+  z-index: 10;
+  position:absolute;
+  right:0;
+  padding: 20px 15px  20px 0;
+}
+
+#nav-icon{
+
+  display: none;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  height: 100px;
+  width: 100px;
+  z-index: 11;
+  background-size: 100%;
+}
+
+.nav-icon-left{
+ background: url('/assets/images/left_arrow.png') no-repeat center ;
+}
+
+ .nav-icon-right{
+ background: url('/assets/images/right_arrow.png') no-repeat center ;
+}
+
+.icon-createtask{
+  display: none;
+  height: 50px;
+  width: 50px;
+  z-index: 11;
+   background: url('/assets/images/new_doc.png') no-repeat center ;
+  background-size: 100%;
+ 
+}
+
+#new-todo {
+  display: inline-block;
+  /* float: right; */
+  height:35px;
+  position: absolute;
+  right: 2.5%;
+  width: 95%;
+  font-size: 15px;
+  padding: 0 10px;
+  left:6%;  
+}
+
+.sidebar ul li a {
+    color: white;
+    height: 50px;
+    border: none;
+    width:95%;
+    display:inline-block;
+    padding-left:15%;
+    margin-left:15px;
+}
+ ul li a:hover{
+
+  background-color:#373434;
+}
+.sidebar ul li {
+   line-height:50px;
+   position:relative;
+}
+
+
+.sidebar #list-wrapper{
+  overflow-y: scroll;
+  overflow-x:hidden;
+  height: 70%;
+  margin: 35px 0 30px 0;
+  font-size: 15px;
+  position:relative;
+  left:-15px;
+  width:105%;
+}
+
+.ql-line{
+  font-size: 30px!important;
+
+}
+
+#main{
+  
+  background: url('/assets/images/bg_note.png') no-repeat center ;
+  background-size: 100%;	
+
+}
+
+#editor-wrapper{
+  padding-left:8%;
+  padding-top:80px;
+
+}
+#sticker{
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 80px;
+  width: 300px;
+  z-index: 11;
+  background: url('/assets/images/sticker.png') no-repeat center ;
+  background-size: 100%;
+  text-align:center;
+  font-size:30px;
+  color:white;
+  line-height:80px;
+}
+
+span.glyphicon.white{
+  color: white;
+}
+
+.invite{
+
+ display:none;
+ margin-left:25px;
+ margin-right:10px;
+}
+
+.invite-input{
+
+}
+
+.banner_m{
+  background: url('/assets/images/main_banner.png') no-repeat center ;
+  background-size: 100%; 
+}
+
+.banner_s{
+  background: url('/assets/images/main_banner_s.png') no-repeat center ;
+  background-size: 100%; 
+}
+
+.doc-state{
+     z-index: 11;
+
+
+   display:inline-block;
+   width:20%;
+   max-width: 65px;
+   position:absolute;
+   top:1px;
+   bottom:1px;
+   left:0;
+}
+
+.glyphicon {
+  position: absolute;
+  right: 5%;
+  top: 40%;
+  cursor: pointer;
+}
