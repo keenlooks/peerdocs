@@ -78,7 +78,7 @@ define('peerdoc-embercli/controllers/pd', ['exports', 'ember'], function (export
         this.set('titlec', title);
         var newdoc = this.store.createRecord('doc', {
           title: title,
-          ctext: '',
+          ctext: "INSERT YOUR TEXT HERE...",
           cursor: 0
         });
         var that = this;
