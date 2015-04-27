@@ -53,76 +53,84 @@ define('peerdoc-embercli/controllers/docmeta', ['exports', 'ember'], function (e
 });
 define('peerdoc-embercli/controllers/pd', ['exports', 'ember'], function (exports, Ember) {
 
-    'use strict';
+  'use strict';
 
-    exports['default'] = Ember['default'].ArrayController.extend({
-        itemController: 'docmeta',
-        sortProperties: ['id'],
-        sortAscending: false,
-        actions: {
-            createDoc: function createDoc() {
-                // implement your action here
-                var model = this.get('model');
-                var title = this.get('newTitle');
-                if (!title.trim()) {
-                    return;
-                }
+  exports['default'] = Ember['default'].ArrayController.extend({
+    itemController: 'docmeta',
+    sortProperties: ['id'],
+    sortAscending: false,
+    actions: {
 
-                var newdoc = this.store.createRecord('doc', {
-                    title: title,
-                    ctext: 'newdoc',
-                    cursor: 0
-                });
-                var that = this;
-                newdoc.save().then(function (saveddoc) {
-                    model.update().then(function () {
+      gotoDoc: function gotoDoc(id, title) {
+        this.set('titlec', title);
+        var docm = this.store.find('doc', id);
+        // implement your action here
+        this.transitionToRoute('pd.doc', docm);
+        return false;
+      },
+      createDoc: function createDoc() {
+        // implement your action here
+        var model = this.get('model');
+        var title = this.get('newTitle');
+        if (!title.trim()) {
+          return;
+        }
+        this.set('titlec', title);
+        var newdoc = this.store.createRecord('doc', {
+          title: title,
+          ctext: '',
+          cursor: 0
+        });
+        var that = this;
+        newdoc.save().then(function (saveddoc) {
+          model.update().then(function () {
 
-                        that.transitionToRoute('pd.doc', saveddoc);
-                    });
-                } /*that.transitionToRoute('index')*/);
-                $('#new-todo').val('');
+            that.transitionToRoute('pd.doc', saveddoc);
+          });
+        } /*that.transitionToRoute('index')*/);
+        $('#new-todo').val('');
 
-                return false;
-                //+newdoc.get("id")
-                //this.transitionToRoute('index');
-            },
+        return false;
+        //+newdoc.get("id")
+        //this.transitionToRoute('index');
+      },
 
-            invite: function invite(id, istr) {
-                if (!istr) {
-                    console.log('NOT CORRECT INPUT FORMAT');
-                    return false;
-                }
-                var strs = istr.split('@');
-                if (strs.length != 2) {
-                    console.log('NOT CORRECT INPUT FORMAT');
-                    return false;
-                }
-                var invitation = this.store.createRecord('invitation', {
-                    address: strs[0],
-                    dockey: 'xxxxx',
-                    name: strs[1],
-                    docid: id,
-                    type: 'invite'
-                });
-                //console.log("1");
-                invitation.save();
-                //console.log("2");
-                return false;
-            },
+      invite: function invite(id, istr) {
+        if (!istr) {
+          console.log('NOT CORRECT INPUT FORMAT');
+          return false;
+        }
+        var strs = istr.split('@');
+        if (strs.length != 2) {
+          console.log('NOT CORRECT INPUT FORMAT');
+          return false;
+        }
+        var invitation = this.store.createRecord('invitation', {
+          address: strs[0],
+          dockey: 'xxxxx',
+          name: strs[1],
+          docid: id,
+          type: 'invite'
+        });
+        //console.log("1");
+        invitation.save();
+        //console.log("2");
+        return false;
+      },
 
-            join: function join(id) {
+      join: function join(id) {
 
-                var joinvar = this.store.createRecord('invitation', {
-                    dockey: 'xxxxx',
-                    docid: id,
-                    type: 'join'
-                });
-                //console.log("1");
-                joinvar.save();
-                //console.log("2");
-                return false;
-            } }
-    });
+        var joinvar = this.store.createRecord('invitation', {
+          dockey: 'xxxxx',
+          docid: id,
+          type: 'join'
+        });
+        //console.log("1");
+        joinvar.save();
+        //console.log("2");
+        return false;
+      } }
+  });
 
 });
 define('peerdoc-embercli/controllers/pd/doc', ['exports', 'ember'], function (exports, Ember) {
@@ -401,7 +409,13 @@ define('peerdoc-embercli/routes/pd/doc', ['exports', 'ember'], function (exports
 
     setupController: function setupController(controller, doc) {
       controller.set('model', doc);
-      controller.set('title', doc.get('title'));
+      var title;
+      if (!controller.get('controllers.pd.titlec')) {
+        title = doc.get('title');
+      } else {
+        title = controller.get('controllers.pd.titlec');
+      }
+      controller.set('title', title);
       console.log(doc.get('title'));
       var refresher;
       console.log('MR :' + controller.get('controllers.pd.refresher'));
@@ -795,56 +809,15 @@ define('peerdoc-embercli/templates/pd', ['exports'], function (exports) {
             } else {
               fragment = this.build(dom);
             }
-            var element3 = dom.childAt(fragment, [5]);
+            var element4 = dom.childAt(fragment, [5]);
             var morph0 = dom.createMorphAt(dom.childAt(fragment, [3]),0,0);
             content(env, morph0, context, "docmeta.title");
-            element(env, element3, context, "action", ["join", get(env, context, "docmeta.id")], {});
+            element(env, element4, context, "action", ["join", get(env, context, "docmeta.id")], {});
             return fragment;
           }
         };
       }());
       var child3 = (function() {
-        var child0 = (function() {
-          return {
-            isHTMLBars: true,
-            revision: "Ember@1.11.3",
-            blockParams: 0,
-            cachedFragment: null,
-            hasRendered: false,
-            build: function build(dom) {
-              var el0 = dom.createDocumentFragment();
-              var el1 = dom.createComment("");
-              dom.appendChild(el0, el1);
-              return el0;
-            },
-            render: function render(context, env, contextualElement) {
-              var dom = env.dom;
-              var hooks = env.hooks, content = hooks.content;
-              dom.detectNamespace(contextualElement);
-              var fragment;
-              if (env.useFragmentCache && dom.canClone) {
-                if (this.cachedFragment === null) {
-                  fragment = this.build(dom);
-                  if (this.hasRendered) {
-                    this.cachedFragment = fragment;
-                  } else {
-                    this.hasRendered = true;
-                  }
-                }
-                if (this.cachedFragment) {
-                  fragment = dom.cloneNode(this.cachedFragment, true);
-                }
-              } else {
-                fragment = this.build(dom);
-              }
-              var morph0 = dom.createMorphAt(fragment,0,0,contextualElement);
-              dom.insertBoundary(fragment, null);
-              dom.insertBoundary(fragment, 0);
-              content(env, morph0, context, "docmeta.title");
-              return fragment;
-            }
-          };
-        }());
         return {
           isHTMLBars: true,
           revision: "Ember@1.11.3",
@@ -858,9 +831,12 @@ define('peerdoc-embercli/templates/pd', ['exports'], function (exports) {
             var el1 = dom.createElement("span");
             dom.setAttribute(el1,"class","doc-state hidden");
             dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n    ");
+            var el1 = dom.createTextNode("\n\n    ");
             dom.appendChild(el0, el1);
-            var el1 = dom.createComment("");
+            var el1 = dom.createElement("a");
+            dom.setAttribute(el1,"href","#");
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
             dom.appendChild(el0, el1);
             var el1 = dom.createTextNode("\n");
             dom.appendChild(el0, el1);
@@ -873,7 +849,7 @@ define('peerdoc-embercli/templates/pd', ['exports'], function (exports) {
           },
           render: function render(context, env, contextualElement) {
             var dom = env.dom;
-            var hooks = env.hooks, get = hooks.get, block = hooks.block;
+            var hooks = env.hooks, get = hooks.get, element = hooks.element, content = hooks.content;
             dom.detectNamespace(contextualElement);
             var fragment;
             if (env.useFragmentCache && dom.canClone) {
@@ -891,8 +867,10 @@ define('peerdoc-embercli/templates/pd', ['exports'], function (exports) {
             } else {
               fragment = this.build(dom);
             }
-            var morph0 = dom.createMorphAt(fragment,3,3,contextualElement);
-            block(env, morph0, context, "link-to", ["pd.doc", get(env, context, "docmeta.id")], {}, child0, null);
+            var element3 = dom.childAt(fragment, [3]);
+            var morph0 = dom.createMorphAt(element3,0,0);
+            element(env, element3, context, "action", ["gotoDoc", get(env, context, "docmeta.id"), get(env, context, "docmeta.title")], {});
+            content(env, morph0, context, "docmeta.title");
             return fragment;
           }
         };
@@ -1072,9 +1050,9 @@ define('peerdoc-embercli/templates/pd', ['exports'], function (exports) {
           } else {
             fragment = this.build(dom);
           }
-          var element4 = dom.childAt(fragment, [1]);
-          var morph0 = dom.createMorphAt(element4,1,1);
-          var morph1 = dom.createMorphAt(element4,3,3);
+          var element5 = dom.childAt(fragment, [1]);
+          var morph0 = dom.createMorphAt(element5,1,1);
+          var morph1 = dom.createMorphAt(element5,3,3);
           var morph2 = dom.createMorphAt(fragment,3,3,contextualElement);
           block(env, morph0, context, "if", [get(env, context, "docmeta.isModified")], {}, child0, child1);
           block(env, morph1, context, "if", [get(env, context, "docmeta.isPending")], {}, child2, child3);
@@ -1173,9 +1151,9 @@ define('peerdoc-embercli/templates/pd', ['exports'], function (exports) {
         } else {
           fragment = this.build(dom);
         }
-        var element5 = dom.childAt(fragment, [1]);
-        var morph0 = dom.createMorphAt(dom.childAt(element5, [1]),3,3);
-        var morph1 = dom.createMorphAt(dom.childAt(element5, [3, 1]),1,1);
+        var element6 = dom.childAt(fragment, [1]);
+        var morph0 = dom.createMorphAt(dom.childAt(element6, [1]),3,3);
+        var morph1 = dom.createMorphAt(dom.childAt(element6, [3, 1]),1,1);
         var morph2 = dom.createMorphAt(dom.childAt(fragment, [3]),1,1);
         inline(env, morph0, context, "input", [], {"type": "text", "id": "new-todo", "class": "form-control", "placeholder": "Enter your title here", "value": get(env, context, "newTitle"), "action": "createDoc"});
         block(env, morph1, context, "each", [get(env, context, "controller")], {"keyword": "docmeta"}, child0, null);
@@ -1301,7 +1279,7 @@ define('peerdoc-embercli/tests/controllers/pd.jshint', function () {
 
   module('JSHint - controllers');
   test('controllers/pd.js should pass jshint', function() { 
-    ok(false, 'controllers/pd.js should pass jshint.\ncontrollers/pd.js: line 39, col 25, Expected \'!==\' and instead saw \'!=\'.\ncontrollers/pd.js: line 26, col 7, \'$\' is not defined.\n\n2 errors'); 
+    ok(false, 'controllers/pd.js should pass jshint.\ncontrollers/pd.js: line 47, col 25, Expected \'!==\' and instead saw \'!=\'.\ncontrollers/pd.js: line 34, col 7, \'$\' is not defined.\n\n2 errors'); 
   });
 
 });
@@ -1478,7 +1456,7 @@ define('peerdoc-embercli/tests/routes/pd/doc.jshint', function () {
 
   module('JSHint - routes/pd');
   test('routes/pd/doc.js should pass jshint', function() { 
-    ok(false, 'routes/pd/doc.js should pass jshint.\nroutes/pd/doc.js: line 19, col 65, Expected \'!==\' and instead saw \'!=\'.\nroutes/pd/doc.js: line 64, col 21, \'i\' is already defined.\nroutes/pd/doc.js: line 108, col 34, Expected \'!==\' and instead saw \'!=\'.\nroutes/pd/doc.js: line 27, col 24, \'Quill\' is not defined.\nroutes/pd/doc.js: line 50, col 11, \'$\' is not defined.\nroutes/pd/doc.js: line 149, col 19, \'refresher\' is not defined.\nroutes/pd/doc.js: line 45, col 48, \'source\' is defined but never used.\nroutes/pd/doc.js: line 143, col 28, \'controller\' is defined but never used.\n\n8 errors'); 
+    ok(false, 'routes/pd/doc.js should pass jshint.\nroutes/pd/doc.js: line 27, col 65, Expected \'!==\' and instead saw \'!=\'.\nroutes/pd/doc.js: line 72, col 21, \'i\' is already defined.\nroutes/pd/doc.js: line 116, col 34, Expected \'!==\' and instead saw \'!=\'.\nroutes/pd/doc.js: line 35, col 24, \'Quill\' is not defined.\nroutes/pd/doc.js: line 58, col 11, \'$\' is not defined.\nroutes/pd/doc.js: line 157, col 19, \'refresher\' is not defined.\nroutes/pd/doc.js: line 53, col 48, \'source\' is defined but never used.\nroutes/pd/doc.js: line 151, col 28, \'controller\' is defined but never used.\n\n8 errors'); 
   });
 
 });
