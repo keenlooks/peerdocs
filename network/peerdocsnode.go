@@ -603,7 +603,7 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
         }
     }
     
-
+/*
     for strings.Index(inputstringtext,backspacestring) != -1 {
         if strings.Index(inputstringtext,backspacestring)-1 >= 0{
             inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)-1] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
@@ -611,12 +611,12 @@ func fetchDocHttp(w http.ResponseWriter, req *http.Request){
             inputstringtext = inputstringtext[:strings.Index(inputstringtext,backspacestring)] + inputstringtext[strings.Index(inputstringtext,backspacestring)+len(backspacestring):]
         }
        // cursorPos[DocID] -= len(backspacestring)
-    }
+    }*/
 
     response.Ctext = inputstringtext
 
     //if response has not changed
-    if(!docmodified[strconv.Itoa(response.Id)]){
+    if(docmodified[strconv.Itoa(response.Id)]){
         response.Title = "None"
     }else{
         docmodified[strconv.Itoa(response.Id)] = false
