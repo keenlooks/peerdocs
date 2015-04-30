@@ -501,6 +501,7 @@ define('peerdoc-embercli/routes/pd/doc', ['exports', 'ember'], function (exports
 
               doc.reload().then(function (doc) {
                 //console.log("222");
+             setInterval(function(){
                 if (doc.get('title') != 'None') {
                   editor.editor.disable();
                   freeze = true;
@@ -514,6 +515,7 @@ define('peerdoc-embercli/routes/pd/doc', ['exports', 'ember'], function (exports
 
                   console.log(doc.get('ctext') + '\n@' + doc.get('cursor'));
                 }
+	         },500);
               });
             }
           });
@@ -522,7 +524,7 @@ define('peerdoc-embercli/routes/pd/doc', ['exports', 'ember'], function (exports
             docdelt.clear();
             doc.reload();
           });*/
-        }, 100);
+        }, 1000);
 
         console.log("TimerHandler: "+refresher);
 
